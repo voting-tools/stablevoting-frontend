@@ -163,6 +163,24 @@ export const undefeatedCandsStr = (cands) => {
   }
 };
 
+export const undefeatedCandsStr2 = (cands) => {
+  const numCands = cands.length;
+
+  if (numCands === 0) {
+    return "";
+  } else if (numCands === 1) {
+    return cands[0].toString() + " is the only undefeated candidate. ";
+  } else {
+    const lastCand = cands[numCands - 1];
+    return (
+      cands.slice(0, -1).join(", ") +
+      " and " +
+      lastCand.toString() + " are the only undefeated candidates. "
+    );
+  }
+};
+
+
 export const listToStr = (list) => {
   if (list.length === 1) {
     return list[0];

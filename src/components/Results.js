@@ -34,6 +34,7 @@ import {
   ShowExplanationButton,
   UndefeatedCandidateText,
   undefeatedCandsStr,
+  undefeatedCandsStr2,
   listToStr,
   listStrToStr,
   areEqual,
@@ -50,6 +51,7 @@ const UniqueUndefeatedExplanation = memo(
     currCands,
     paddingLeft,
     cycles,
+    hasCycle,
     defeats,
     bgColor,
     currColor,
@@ -103,6 +105,7 @@ const UniqueUndefeatedExplanation = memo(
           <>
             {" "}
             is the only <UndefeatedCandidateText />.
+            {hasCycle && Object.keys(cycles).length === 0 ? <span/> : 
             <div>
               {showExplanation ? (
                 <HideExplanationButton
@@ -118,6 +121,7 @@ const UniqueUndefeatedExplanation = memo(
                 />
               )}
             </div>
+            }
             <Collapse in={showExplanation}>
               {Object.keys(cycles).length > 0 ? (
                 <Stack spacing={0}>
@@ -185,6 +189,17 @@ const UniqueUndefeatedExplanation = memo(
                   </Box>
                 </Stack>
               ) : (
+                hasCycle ? 
+                  <Box
+                  sx={{
+                    fontSize: 20,
+                    paddingLeft: paddingLeft,
+                    paddingTop: "10px",
+                  }}
+                >
+                  There are majority cycles.{" "}
+                  {undefeatedCandsStr2(undefeatedCands)} 
+                </Box> : 
                 <Box
                   sx={{
                     fontSize: 20,
@@ -209,6 +224,7 @@ const UndefeatedExplanation = memo(
   ({
     margins,
     cycles,
+    hasCycle,
     undefeatedCands,
     currCands,
     paddingLeft,
@@ -563,6 +579,7 @@ const Explanation = memo(
     explanations,
     margins,
     cycles,
+    hasCycle,
     defeats,
   }) => {
     const [shownMainExplanation, setShownMainExplanation] = useState([]);
@@ -600,6 +617,7 @@ const Explanation = memo(
           currCands={currCands.split(",")}
           paddingLeft={paddingLeft}
           cycles={cycles}
+          hasCycle={hasCycle}
           defeats={defeats}
           currColor={currColor}
         />
@@ -620,6 +638,7 @@ const Explanation = memo(
             currCands={currCands.split(",")}
             paddingLeft={paddingLeft}
             cycles={cycles}
+            hasCycle={hasCycle}
             defeats={defeats}
           />
           <Box
@@ -858,6 +877,7 @@ export const Results = ({ pollId }) => {
     linearOrder: [],
     defeats: {},
     cycles: {},
+    hasCycle: false,
     allowShowProfile: false,
   });
   const params = useParams();
@@ -892,6 +912,7 @@ export const Results = ({ pollId }) => {
           explanations: resp.data["explanations"],
           defeats: resp.data["defeats"],
           hasDefeats: resp.data["has_defeats"],
+          hasCycle: resp.data["has_cycle"],
           linearOrder: resp.data["linear_order"],
           cycles: resp.data["splitting_numbers"],
           numVoters: parseInt(resp.data["num_voters"]),
@@ -1079,6 +1100,7 @@ export const Results = ({ pollId }) => {
                             explanations={pollOutcome.explanations}
                             margins={pollOutcome.margins}
                             cycles={pollOutcome.cycles}
+                            hasCycle={pollOutcome.hasCycle}
                             defeats={pollOutcome.defeats}
                           />
                         </Collapse>
