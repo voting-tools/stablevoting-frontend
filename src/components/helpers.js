@@ -2,7 +2,6 @@
 //export const API_URL = "https://cryptic-stream-05127.herokuapp.com" 
 export const API_URL = "https://stablevotingapi2.herokuapp.com" 
 //export const API_URL = "http://localhost:8000" 
-//export const API_URL = "https://stablevoting-api-dev.herokuapp.com"
 export const URL = "https://stablevoting.org"   
 //export const URL = "http://localhost:3000" 
 
