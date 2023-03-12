@@ -105,7 +105,7 @@ const UniqueUndefeatedExplanation = memo(
           <>
             {" "}
             is the only <UndefeatedCandidateText />.
-            {hasCycle && Object.keys(cycles).length === 0 ? <span/> : 
+            {hasCycle && Object.keys(cycles).length === 0 ?<div> test</div> : 
             <div>
               {showExplanation ? (
                 <HideExplanationButton
@@ -330,7 +330,16 @@ const UndefeatedExplanation = memo(
                 />
               </Box>
             </Stack>
-          ) : (
+          ) : (hasCycle ? 
+            <Box
+              sx={{
+                fontSize: 20,
+                paddingLeft: paddingLeft,
+                paddingTop: "10px",
+              }}
+            >
+              {undefeatedCandsStr2(undefeatedCands)}
+            </Box>: 
             <Box
               sx={{
                 fontSize: 20,
@@ -740,10 +749,13 @@ const Explanation = memo(
                                 }}
                               >
                                 The Stable Voting{" "}
-                                {winners.length === 1
+                                {console.log("winners is ")}
+                                {console.log(winners.split(","))}
+                                {console.log(winners.split(",").length === 1)}
+                                {winners.split(",").length === 1
                                   ? "winner is"
                                   : "winners are"}{" "}
-                                {listStrToStr(winners)}
+                                {listStrToStr(winners.split(","))}
                               </Paper>
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -1061,8 +1073,19 @@ export const Results = ({ pollId }) => {
                       )}
                     </Box>
                   </Grid>
-                  {console.log()}
-                  {Object.keys(pollOutcome.explanations).length === 0 || Object.keys(pollOutcome.explanations[pollOutcome.candidates.join(",")]).length === 0 ? <span/> : 
+                  {Object.keys(pollOutcome.explanations).length === 0 || Object.keys(pollOutcome.explanations[pollOutcome.candidates.join(",")]).length === 0 ? 
+                    <Grid item xs={12}>
+                      <Box sx={{
+                          fontSize: 20,
+                          color: "inherit",
+                          textAlign:"left",
+                          fontStyle: "inherit",
+                          marginTop: 0,
+                        }}>
+
+                          Explanation of winner is too complicated to display. 
+                      </Box>
+                  </Grid> : 
                   <Grid item xs={12}>
                     <Box>
                       <Button

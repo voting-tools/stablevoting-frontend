@@ -104,10 +104,12 @@ export const Admin = () => {
     axios
       .get(`${API_URL}/${id}?oid=${oid}`)
       .then((resp) => {
+        console.log(resp)
         setCurrentPollData(resp.data);
         if (!resp.data["is_owner"]) {
           setNotOwnerMessage(true);
         } else {
+          console.log("HERE!!")
           console.log(resp.data);
           setCurrentPollData(resp.data);
           setUpdatedPollData({ ...resp.data });
