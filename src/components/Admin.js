@@ -74,13 +74,21 @@ export const Admin = () => {
       top: 0,
       behavior: "smooth",
     });
+    console.log("HERE")
+    console.log(`${API_URL}/${id}?oid=${oid}`)
     axios
       .get(`${API_URL}/${id}?oid=${oid}`)
       .then((resp) => {
+        console.log("resp is ")
+        console.log(resp.data)
         setCurrentPollData(resp.data);
+        console.log("AFTER SET CURRENT POLL DATA")
+        console.log(resp.data)
+
         if (!resp.data["is_owner"]) {
           setNotOwnerMessage(true);
         } else {
+          console.log("IN ELSE")
           setCurrentPollData(resp.data);
           setUpdatedPollData({ ...resp.data });
           setCandList([...resp.data["candidates"]]);
@@ -93,6 +101,8 @@ export const Admin = () => {
             setShowGetDate(true);
           }
         }
+        console.log("DONE!!! ")
+        console.log(currentPollData)
       })
       .catch((err) => {
         console.log(err.response.detail);
@@ -104,13 +114,12 @@ export const Admin = () => {
     axios
       .get(`${API_URL}/${id}?oid=${oid}`)
       .then((resp) => {
+        console.log("RELOAD!")
         console.log(resp)
         setCurrentPollData(resp.data);
         if (!resp.data["is_owner"]) {
           setNotOwnerMessage(true);
         } else {
-          console.log("HERE!!")
-          console.log(resp.data);
           setCurrentPollData(resp.data);
           setUpdatedPollData({ ...resp.data });
           setCandList([...resp.data["candidates"]]);
@@ -487,7 +496,7 @@ export const Admin = () => {
                       submitted a ballot without ranking any candidates.
                     </li>
                   )}
-                </ul>
+                  </ul>
               </Box>
             )}
 

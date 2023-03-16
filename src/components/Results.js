@@ -755,7 +755,7 @@ const Explanation = memo(
                                 {winners.split(",").length === 1
                                   ? "winner is"
                                   : "winners are"}{" "}
-                                {listStrToStr(winners.split(","))}
+                                {listStrToStr(winners)}
                               </Paper>
                             </Grid>
                             <Grid item xs={12} sm={6}>
