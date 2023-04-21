@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import Container from "@mui/material/Container";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
+import DownloadIcon from '@mui/icons-material/Download';
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
 import AccordionDetails from "@mui/material/AccordionDetails";
@@ -17,6 +17,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import InsertLinkOutlinedIcon from "@mui/icons-material/InsertLinkOutlined";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
 import AlertTitle from "@mui/material/AlertTitle";
 import Alert from "@mui/material/Alert";
@@ -27,19 +30,24 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
-import LocalizationProvider from "@mui/lab/LocalizationProvider";
-import DateTimePicker from "@mui/lab/DateTimePicker";
-import DateAdapter from "@mui/lab/AdapterMoment";
-import moment from "moment";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
+//import moment from "moment";
+import moment from 'moment-timezone';
 import Fab from "@mui/material/Fab";
 import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import axios from "axios";
 import FileUpload from "react-material-file-upload";
+import { CSVLink } from "react-csv";
 
 import { useParams, useSearchParams } from "react-router-dom";
 import { COLORS, URL, API_URL } from "./helpers";
 import { isValidEmail } from "./helpers";
+
+import Profile from "./Profile";
+import { Typography } from "@mui/material";
 
 export const Admin = () => {
   const params = useParams();
@@ -53,10 +61,9 @@ export const Admin = () => {
   const [message, setMessage] = useState("");
   const [deleteMessage, setDeleteMessage] = useState(false);
   const [overwriteBallots, setOverWriteBallots] = useState(false);
-  const [currentPollData, setCurrentPollData] = useState(null);
-  const [updatedPollData, setUpdatedPollData] = useState(null);
+  const [currentPollData, setCurrentPollData] = useState({});
+  const [updatedPollData, setUpdatedPollData] = useState({});
   const navigate = useNavigate();
-  const matches = useMediaQuery("(min-width:600px)");
   const [emailList, setEmailList] = useState([]);
   const [invalidEmail, setInvalidEmail] = useState("");
   const [addVoterEmailList, setVoterEmailList] = useState([]);
@@ -65,6 +72,9 @@ export const Admin = () => {
   const [showGetDate, setShowGetDate] = useState(false);
   const [closingDate, setClosingDate] = useState(null);
   const [candList, setCandList] = useState([]);
+  const [columns, setColumns] = useState([[]]);
+  const [numRows, setNumRows] = useState(0);
+  const [submittedRankingInfo, setSubmittedRankingInfo] = useState(null);
 
   const id = params.id;
   const oid = searchParams.get("oid");
@@ -74,35 +84,26 @@ export const Admin = () => {
       top: 0,
       behavior: "smooth",
     });
-    console.log("HERE")
-    console.log(`${API_URL}/${id}?oid=${oid}`)
     axios
-      .get(`${API_URL}/${id}?oid=${oid}`)
+      .get(`${API_URL}/polls/data/${id}?oid=${oid}`)
       .then((resp) => {
-        console.log("resp is ")
-        console.log(resp.data)
+        console.log(resp);
         setCurrentPollData(resp.data);
-        console.log("AFTER SET CURRENT POLL DATA")
-        console.log(resp.data)
-
         if (!resp.data["is_owner"]) {
           setNotOwnerMessage(true);
         } else {
-          console.log("IN ELSE")
-          setCurrentPollData(resp.data);
+          setCurrentPollData({ ...resp.data });
           setUpdatedPollData({ ...resp.data });
           setCandList([...resp.data["candidates"]]);
           setDateErrorText("");
           if (
-            resp.data["closing_datetime"] != "" &&
+            resp.data["closing_datetime"] !== "" &&
             resp.data["closing_datetime"] !== null
           ) {
             setClosingDate(moment(resp.data["closing_datetime"]));
             setShowGetDate(true);
           }
         }
-        console.log("DONE!!! ")
-        console.log(currentPollData)
       })
       .catch((err) => {
         console.log(err.response.detail);
@@ -112,20 +113,19 @@ export const Admin = () => {
 
   async function reload() {
     axios
-      .get(`${API_URL}/${id}?oid=${oid}`)
+      .get(`${API_URL}/polls/data/${id}?oid=${oid}`)
       .then((resp) => {
-        console.log("RELOAD!")
-        console.log(resp)
         setCurrentPollData(resp.data);
         if (!resp.data["is_owner"]) {
           setNotOwnerMessage(true);
         } else {
-          setCurrentPollData(resp.data);
+          console.log(resp.data);
+          setCurrentPollData({ ...resp.data });
           setUpdatedPollData({ ...resp.data });
           setCandList([...resp.data["candidates"]]);
           setDateErrorText("");
           if (
-            resp.data["closing_datetime"] != "" &&
+            resp.data["closing_datetime"] !== "" &&
             resp.data["closing_datetime"] !== null
           ) {
             setClosingDate(moment(resp.data["closing_datetime"]));
@@ -137,6 +137,7 @@ export const Admin = () => {
         console.log(err.response.detail);
         setShowNotFoundMessage(true);
       });
+      handleGetSubmittedRankingInfo();
   }
   async function copyLinkToClipboard(text) {
     if ("clipboard" in navigator) {
@@ -147,8 +148,12 @@ export const Admin = () => {
   }
 
   const updatePollField = (fieldname, val) => {
+    console.log("Update Poll Field")
+    console.log(fieldname)
+    console.log(val)
     var updatedPoll = updatedPollData;
     updatedPoll[fieldname] = val;
+    console.log(updatedPoll)
     setUpdatedPollData({ ...updatedPoll });
   };
 
@@ -176,8 +181,8 @@ export const Admin = () => {
     setUpdatedPollData({ ...currentPollData });
     setCandList([...currentPollData["candidates"]]);
     if (
-      currentPollData["closing_datetime"] != "" &&
-      currentPollData["closing_datetime"] != null
+      currentPollData["closing_datetime"] !== "" &&
+      currentPollData["closing_datetime"] !== null
     ) {
       setClosingDate(moment(currentPollData["closing_datetime"]));
       setShowGetDate(true);
@@ -190,7 +195,7 @@ export const Admin = () => {
   const canUpdatePoll = () => {
     var nonNullCands = candList.filter((c) => !isEmpty(c));
     return (
-      updatedPollData != null &&
+      updatedPollData !== null &&
       !isEmpty(updatedPollData["title"]) &&
       nonNullCands.length >= 2
     );
@@ -204,12 +209,13 @@ export const Admin = () => {
       is_private: updatedPollData["is_private"],
       voter_emails: updatedPollData["voter_emails"],
       show_rankings: updatedPollData["show_rankings"],
-      closing_datetime: closingDate != null ? closingDate.toISOString() : "del",
+      closing_datetime: closingDate !== null ? closingDate.toISOString() : "del",
       timezone: updatedPollData["timezone"],
       show_outcome: updatedPollData["show_outcome"],
+      can_view_outcome_before_closing: updatedPollData["can_view_outcome_before_closing"]
     };
     axios
-      .post(`${API_URL}/u/${id}?oid=${oid}`, updatedPoll)
+      .post(`${API_URL}/polls/update/${id}?oid=${oid}`, updatedPoll)
       .then((resp) => {
         console.log(resp.data);
         setShowMessage(true);
@@ -246,7 +252,7 @@ export const Admin = () => {
     if (invalidEmails.length > 0) {
       setInvalidEmail(
         "Only valid emails are saved.  Invalid emails: " +
-          invalidEmails.join(",")
+        invalidEmails.join(",")
       );
     } else {
       setInvalidEmail("");
@@ -277,7 +283,7 @@ export const Admin = () => {
     if (invalidEmails.length > 0) {
       setInvalidAdvoterEmail(
         "Only valid emails are saved.  Invalid emails: " +
-          invalidEmails.join(",")
+        invalidEmails.join(",")
       );
     } else {
       setInvalidAdvoterEmail("");
@@ -286,11 +292,14 @@ export const Admin = () => {
   };
 
   const handleAddVoters = () => {
+    console.log("handle add voters")
+    console.log(addVoterEmailList.split(","))
     var updatedPoll = {
-      voter_emails: addVoterEmailList.split(","),
+      is_private: true,
+      new_voter_emails: addVoterEmailList.split(","),
     };
     axios
-      .post(`${API_URL}/u/${id}?oid=${oid}`, updatedPoll)
+      .post(`${API_URL}/polls/update/${id}?oid=${oid}`, updatedPoll)
       .then((resp) => {
         console.log(resp.data);
         setShowMessage(true);
@@ -330,16 +339,16 @@ export const Admin = () => {
   };
 
   const candListToRankedStr = (candArr) => {
-    if (candArr.length == 0) {
+    if (candArr.length === 0) {
       return "";
     }
-    if (candArr.length == 1) {
+    if (candArr.length === 1) {
       return (
         "The candidate " +
         candArr[0].toString() +
         " has not been ranked by any voters."
       );
-    } else if (candArr.length == 2) {
+    } else if (candArr.length === 2) {
       return (
         "The candidates " +
         candArr[0].toString() +
@@ -361,7 +370,7 @@ export const Admin = () => {
 
   const handleDeletePoll = () => {
     axios
-      .get(`${API_URL}/d/${id}?oid=${oid}`)
+      .delete(`${API_URL}/polls/delete/${id}?oid=${oid}`)
       .then((resp) => {
         console.log(resp.data);
         setDeleteMessage(true);
@@ -377,14 +386,36 @@ export const Admin = () => {
   const handleClosePoll = () => {
     const now = moment();
     axios
-      .post(`${API_URL}/u/${id}?oid=${oid}`, {
+      .post(`${API_URL}/polls/update/${id}?oid=${oid}`, {
         closing_datetime: now.toISOString(),
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        is_completed: true
       })
       .then((resp) => {
         console.log(resp.data);
         setShowMessage(true);
-        setMessage("The poll is closed.");
+        setMessage("The poll is no longer accepting votes.");
+        reload();
+      })
+      .catch((err) => {
+        console.log("ERROR");
+        console.log(err.detail);
+        setShowErrorMessage(true);
+        setErrorMessage(err.response.data.detail);
+      });
+  };
+
+  const handleOpenPoll = () => {
+    axios
+      .post(`${API_URL}/polls/update/${id}?oid=${oid}`, {
+        closing_datetime: "del",
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        is_completed: false
+      })
+      .then((resp) => {
+        console.log(resp.data);
+        setShowMessage(true);
+        setMessage("The poll is now accepting votes.");
         reload();
       })
       .catch((err) => {
@@ -396,7 +427,7 @@ export const Admin = () => {
   };
 
   const handleAddBulkRankings = () => {
-    if (rankingsFile === null || rankingsFile.length == 0) {
+    if (rankingsFile === null || rankingsFile.length === 0) {
       setShowErrorMessage(true);
       setErrorMessage("You must upload a csv file with the rankings.");
       return;
@@ -407,7 +438,7 @@ export const Admin = () => {
     const headers = { "Content-Type": rankingsFile[0].type };
     axios
       .post(
-        `${API_URL}/bulk/${id}?oid=${oid}&overwrite=${overwriteBallots}`,
+        `${API_URL}/polls/bulk_vote/${id}?oid=${oid}&overwrite=${overwriteBallots}`,
         formData,
         headers
       )
@@ -425,13 +456,32 @@ export const Admin = () => {
       });
   };
 
-  const isEmpty = (s) => s.replace(/\s/g, "") === "";
+  const handleGetSubmittedRankingInfo = () => {
+    console.log("Get submitted ranking info...");
+    axios
+      .get(`${API_URL}/polls/submitted_rankings/${id}?oid=${oid}`)
+      .then((resp) => {
+        console.log(resp.data);
+        setColumns(resp.data.columns);
+        setNumRows(resp.data.num_rows);
+        setSubmittedRankingInfo(resp.data);
+      })
+      .catch((err) => {
+        console.log("ERROR");
+        console.log(err.response.data.detail);
+        //setShowErrorMessage(true);
+        //setErrorMessage(err.response.data.detail);
+      });
+  };
+  const isEmpty = (s) => s !== undefined && s.replace(/\s/g, "") === "";
 
-  const voteUrlOid = `${URL}/vote/` + id + "?oid=" + oid;
-  const voteLinkOid = "/vote/" + id + "?oid=" + oid;
+  const voteUrl = `${URL}/vote/` + id;
+  const voteLink = "/vote/" + id;
   const resultsLinkOid = "/results/" + id + "?oid=" + oid;
   const resultsUrlOid = `${URL}/results/` + id + "?oid=" + oid;
 
+  console.log("currentPollData")
+  console.log(currentPollData)
   return (
     <div>
       <Container
@@ -461,42 +511,6 @@ export const Admin = () => {
               <Box>
                 The poll, {currentPollData["title"]}, was created on{" "}
                 {currentPollData["creation_dt"]}.{" "}
-                <ul>
-                  <li>
-                    {currentPollData["num_ballots"] == 1
-                      ? "1 person has "
-                      : currentPollData["num_ballots"].toString() +
-                        " people have"}{" "}
-                    participated in the poll.
-                  </li>
-                  <li>
-                    {currentPollData["unranked_candidates"].length > 0
-                      ? candListToRankedStr(
-                          currentPollData["unranked_candidates"]
-                        )
-                      : "All candidates are ranked by at least one voter."}
-                  </li>
-                  {currentPollData["is_closed"] && (
-                    <li>
-                      {" "}
-                      The poll closed on{" "}
-                      {moment(currentPollData["closing_datetime"]).format(
-                        "MMMM Do YYYY, h:mm a"
-                      )}{" "}
-                      ({currentPollData["timezone"]}).
-                    </li>
-                  )}
-                  {currentPollData["num_ballots"] > 0 && (
-                    <li>
-                      {" "}
-                      {currentPollData["num_no_ranked_cands"] == 1
-                        ? "1 person "
-                        : currentPollData["num_no_ranked_cands"].toString() +
-                          " people "}
-                      submitted a ballot without ranking any candidates.
-                    </li>
-                  )}
-                  </ul>
               </Box>
             )}
 
@@ -511,25 +525,250 @@ export const Admin = () => {
                 </AccordionSummary>
                 <AccordionDetails>
                   <Box sx={{ marginBottom: 1 }}>
-                    Use the following link to view the results of the poll.
-                  </Box>
-                  <Box
-                    sx={{ overflow: "scroll", paddingLeft: 4, paddingTop: 0 }}
-                  >
-                    <Link to={resultsLinkOid}>{resultsUrlOid} </Link>{" "}
-                    <Tooltip title="copy link">
-                      <IconButton
-                        sx={{ marginLeft: 2 }}
-                        onClick={() => copyLinkToClipboard(resultsUrlOid)}
-                        aria-label="copy link"
-                      >
-                        <InsertLinkOutlinedIcon />
-                      </IconButton>
-                    </Tooltip>
+                    <Box sx={{ marginBottom: 1 }}>
+                      Use the following link to view the results of the poll.
+                    </Box>
+                    <Box
+                      sx={{ overflow: "scroll", paddingLeft: 4, paddingTop: 0 }}
+                    >
+                      <Link to={resultsLinkOid}>{resultsUrlOid} </Link>{" "}
+                      <Tooltip title="copy link">
+                        <IconButton
+                          sx={{ marginLeft: 2 }}
+                          onClick={() => copyLinkToClipboard(resultsUrlOid)}
+                          aria-label="copy link"
+                        >
+                          <InsertLinkOutlinedIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </Box>
                 </AccordionDetails>
               </Accordion>
+
               <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel2a-content"
+                  id="panel2a-header"
+                >
+                  Vote in the poll.
+                </AccordionSummary>
+                <AccordionDetails>
+                  {currentPollData !== null && !currentPollData["is_private"] ?
+                    <Box sx={{ marginBottom: 1 }}>
+                      <Box sx={{ marginBottom: 1 }}>
+                        Use the following link to vote in the poll.
+                      </Box>
+                      <Box
+                        sx={{ overflow: "scroll", paddingLeft: 4, paddingTop: 0 }}
+                      >
+                        <Link to={voteLink}>{voteUrl} </Link>{" "}
+                        <Tooltip title="copy link">
+                          <IconButton
+                            sx={{ marginLeft: 2 }}
+                            onClick={() => copyLinkToClipboard(voteUrl)}
+                            aria-label="copy link"
+                          >
+                            <InsertLinkOutlinedIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box> </Box> :
+                    <Box> The poll is private: {currentPollData["num_invited_voters"] === 1 ? "1 person has" : currentPollData["num_invited_voters"].toString() + " people have"}  been invited to vote in the poll.  Each voter has received a unique link to vote in the poll. </Box>}
+                </AccordionDetails>
+              </Accordion>
+              <Accordion onClick={handleGetSubmittedRankingInfo}>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel2a-content"
+                  id="panel2a-header"
+                >
+                  Information about the submitted rankings.
+                </AccordionSummary>
+                <AccordionDetails>
+                  {submittedRankingInfo !== null ? 
+                  <Box sx={{ marginBottom: 0 }}>
+                    {submittedRankingInfo !== null &&
+                    submittedRankingInfo["num_voters"] === 0 ? (
+                      "No rankings have been submitted to this poll."
+                    ) : (
+                      <List dense={true}  >
+                            <ListItem sx={{ fontSize: "none" }}>
+                          <ListItemText >
+                            <Typography sx={{fontSize:"inherit"}}>
+                            {submittedRankingInfo !== null && submittedRankingInfo["num_voters"] === 1
+                              ? "1 person has "
+                              : submittedRankingInfo["num_voters"].toString() +
+                                " people have"}{" "}
+                            participated in the poll.
+                            </Typography>
+                          </ListItemText>
+                        </ListItem>
+                        <ListItem sx={{ fontSize: "none" }}>
+                          <ListItemText>
+                          <Typography sx={{fontSize:"inherit"}}>
+                           {submittedRankingInfo["unranked_candidates"].length > 0
+                              ? candListToRankedStr(
+                                submittedRankingInfo["unranked_candidates"]
+                                )
+                              : "All candidates are ranked by at least one voter."}
+                              </Typography>
+                          </ListItemText>
+                        </ListItem>
+                        {submittedRankingInfo !== null && submittedRankingInfo["num_voters"] > 0 &&
+                          submittedRankingInfo["num_empty_ballots"] > 0 && (
+                            <ListItem sx={{ fontSize: "none" }}>
+                              <ListItemText>
+                              <Typography sx={{fontSize:"inherit"}}>
+                              {" "}
+                                {submittedRankingInfo["num_empty_ballots"] === 1
+                                  ? "1 person "
+                                  : submittedRankingInfo[
+                                      "num_empty_ballots"
+                                    ].toString() + " people "}
+                                submitted a ballot without ranking any
+                                candidates.
+                                </Typography>
+                              </ListItemText>
+                            </ListItem>
+                          )}
+
+                        {submittedRankingInfo !== null &&
+                          submittedRankingInfo["num_voters"] > 0 && (
+                            <ListItem >
+                              <ListItemText>
+                              <Typography sx={{fontSize:20}}>
+                                Current Submitted Ballots
+                                </Typography>
+
+                                <Box sx={{ marginTop: 2, overflow: "scroll" }}>
+                                  <Profile
+                                  columnData = {{"columns": columns, "numRows": numRows}}
+                                    cand1={""}
+                                    cand2={""}
+                                  />
+                                </Box>
+                                <Box sx={{ marginTop: 2, fontSize:20}}>
+
+                                <CSVLink data={submittedRankingInfo["csv_data"]} filename={'submitted_rankings-' + currentPollData["title"] + '.csv'}>Download submitted rankings.</CSVLink>                                
+                                </Box>
+                              </ListItemText>
+                            </ListItem>
+                          )}
+
+                      </List>
+                    )}
+                  </Box> : <div/>}
+                </AccordionDetails>
+              </Accordion>
+
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel5a-content"
+                    id="panel5a-header"
+                  >
+                    The poll is {currentPollData["is_closed"] || currentPollData["is_completed"] ? "closed." : "open."}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box>
+                      The poll {(currentPollData["is_closed"] || currentPollData["is_completed"]) ? "is not " : "is "}  currently accepting votes.  
+                      {currentPollData["closing_datetime"] === null
+                        ? " There is no closing date for this poll."
+                        : ` The closing date for this poll ${currentPollData["is_closed"] || currentPollData["is_completed"] ? "was" : "is"} ${moment(
+                            currentPollData["closing_datetime"]
+                          ).format("MMMM Do YYYY, h:mm a")}`}
+                    </Box>
+                    <Box sx={{ marginTop: 2 }}>
+                    {(currentPollData["is_closed"] || currentPollData["is_completed"]) ?
+                      <Button
+                        sx={{
+                          textTransform: "none",
+                          fontSize: 20,
+                        }}
+                        onClick={handleOpenPoll}
+                        variant="outlined"
+                      >
+                        Open poll
+                      </Button> : <Button
+                        sx={{
+                          textTransform: "none",
+                          fontSize: 20,
+                        }}
+                        onClick={handleClosePoll}
+                        variant="outlined"
+                      >
+                        Close poll
+                      </Button> }
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              
+
+                {currentPollData !== null && currentPollData["is_private"] && !currentPollData["is_completed"] && !currentPollData["is_closed"] && (
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel4a-content"
+                    id="panel4a-header"
+                  >
+                    Add voters to the poll.
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box>
+                      <Box
+                        sx={{
+                          padding: 0,
+                          marginTop: 0,
+                          marginBottom: 4,
+                          backgroundColor: "inherit",
+                        }}
+                      >
+                        Give the list of emails for the additional voters that
+                        will participate in the poll. No existing voters will be removed. Each voter will receive a unique link to access the poll. Enter the emails separated by a comma, a space or a newline. <em>No emails will be saved.</em>{" "}
+                      </Box>
+                      <Box
+                        sx={{
+                          width: "50%",
+                          padding: 0,
+                          marginTop: 0,
+                          marginBottom: 4,
+                          backgroundColor: "inherit",
+                        }}
+                      >
+                        <TextField
+                          id="email-list"
+                          label="Email List"
+                          multiline
+                          fullWidth
+                          error={invalidAdvoterEmail.length > 0}
+                          helperText={
+                            invalidAdvoterEmail.length > 0
+                              ? invalidAdvoterEmail
+                              : null
+                          }
+                          value={addVoterEmailList}
+                          onChange={handleAddVoterEmailList}
+                          variant="standard"
+                        />
+                      </Box>
+                      <Button
+                        variant="contained"
+                        sx={{
+                          textTransform: "none",
+                          fontSize: 20,
+                        }}
+                        disabled={addVoterEmailList.length === 0}
+                        onClick={handleAddVoters}
+                      >
+                        Add voters
+                      </Button>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              )}
+
+              {!currentPollData["is_completed"] && !currentPollData["is_closed"] && <Accordion>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
                   aria-controls="panel3a-content"
@@ -539,13 +778,8 @@ export const Admin = () => {
                 </AccordionSummary>
                 <AccordionDetails>
                   <Box sx={{ paddingBottom: 2 }}>
-                    The header for each column in the csv file is a candidate in
-                    the poll and the rows describe a ranking. For example, the
-                    csv file "A,B,C,D\n1,1,2,3\n3,1,2,4" represents two
-                    rankings: the first ranking has A and B tied for 1st, C in
-                    2nd place and D in 3rd place, and the second ranking has B
-                    in first place, C in 2nd place, A is 3rd place and D in 4th
-                    place.
+                    The header row of the csv file must contain all the candidates, one with each column.  Each row describes a ranking.  The last column is the number of copies of each ballot to submit (if it is blank, then one copy will be submitted). For example, the csv file "A,B,C,D\n1,1,2,3,3\n3,1,2,4" represents 4 rankings: 3 copies of the ranking in which A and B tied for 1st, C in 2nd place and D in 3rd place, and the fourth ranking has B in first place, C in 2nd place, A is 3rd place and D in 4th place. {currentPollData["candidates"] !== undefined ? <CSVLink data={[currentPollData["candidates"]]} filename={'stablevoting-poll.csv'}>Download a sample csv file.</CSVLink> : ''}
+
                   </Box>
                   <FileUpload
                     title="Upload a csv file"
@@ -601,107 +835,7 @@ export const Admin = () => {
                     </Button>
                   </Box>
                 </AccordionDetails>
-              </Accordion>
-              {currentPollData !== null && currentPollData["is_private"] && (
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel4a-content"
-                    id="panel4a-header"
-                  >
-                    Add voters to the poll.
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Box>
-                      <Box
-                        sx={{
-                          padding: 0,
-                          marginTop: 0,
-                          marginBottom: 4,
-                          backgroundColor: "inherit",
-                        }}
-                      >
-                        Give the list of emails for the additional voters that
-                        will participate in the poll. No existing voters will be
-                        removed. Each voter will receive a unique link to access
-                        the poll. Enter the emails separated by a comma, a space
-                        or a newline. <em>No emails will be saved.</em>{" "}
-                      </Box>
-                      <Box
-                        sx={{
-                          width: "50%",
-                          padding: 0,
-                          marginTop: 0,
-                          marginBottom: 4,
-                          backgroundColor: "inherit",
-                        }}
-                      >
-                        <TextField
-                          id="email-list"
-                          label="Email List"
-                          multiline
-                          fullWidth
-                          error={invalidAdvoterEmail.length > 0}
-                          helperText={
-                            invalidAdvoterEmail.length > 0
-                              ? invalidAdvoterEmail
-                              : null
-                          }
-                          value={addVoterEmailList}
-                          onChange={handleAddVoterEmailList}
-                          variant="standard"
-                        />
-                      </Box>
-                      <Button
-                        variant="contained"
-                        sx={{
-                          textTransform: "none",
-                          fontSize: 20,
-                        }}
-                        disabled={addVoterEmailList.length == 0}
-                        onClick={handleAddVoters}
-                      >
-                        Add voters
-                      </Button>
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-
-              {currentPollData != null && !currentPollData["is_closed"] && (
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel5a-content"
-                    id="panel5a-header"
-                  >
-                    Close the poll.
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Box>
-                      {currentPollData["closing_datetime"] === null
-                        ? "There is no closing date for this poll."
-                        : `The closing date for this poll is ${moment(
-                            currentPollData["closing_datetime"]
-                          ).format("MMMM Do YYYY, h:mm a")} (${
-                            currentPollData["timezone"]
-                          })`}
-                    </Box>
-                    <Box sx={{ marginTop: 2 }}>
-                      <Button
-                        sx={{
-                          textTransform: "none",
-                          fontSize: 20,
-                        }}
-                        onClick={handleClosePoll}
-                        variant="outlined"
-                      >
-                        Close poll
-                      </Button>
-                    </Box>
-                  </AccordionDetails>
-                </Accordion>
-              )}
+              </Accordion>}
               <Accordion>
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
@@ -713,18 +847,18 @@ export const Admin = () => {
                 <AccordionDetails>
                   <Box sx={{ padding: 2 }}>
                     <Stack spacing={2}>
-                      {updatedPollData != null && (
+                      {updatedPollData !== null && updatedPollData["title"] !== undefined && (
                         <FormGroup sx={{ marginBottom: 2 }}>
                           <TextField
                             fullWidth
                             error={
-                              updatedPollData != null &&
+                              updatedPollData !== null &&
                               isEmpty(updatedPollData["title"])
                                 ? true
                                 : false
                             }
                             helperText={
-                              updatedPollData != null &&
+                              updatedPollData !== null &&
                               isEmpty(updatedPollData["title"])
                                 ? "Please enter a title for the poll."
                                 : ""
@@ -739,7 +873,7 @@ export const Admin = () => {
                         </FormGroup>
                       )}
 
-                      {updatedPollData !== null && (
+                      {updatedPollData !== null && updatedPollData["description"] !== undefined && (
                         <FormGroup sx={{ marginBottom: 2 }}>
                           <TextField
                             fullWidth
@@ -755,7 +889,7 @@ export const Admin = () => {
                       {updatedPollData !== null && (
                         <Box>
                           <Box sx={{ marginTop: 5 }}>Candidates</Box>
-                          {currentPollData["num_ballots"] == 0 ? (
+                          {currentPollData["num_ballots"] === 0 ? (
                             <Stack sx={{ padding: 2 }} spacing={2}>
                               {candList.map((c, cidx) => {
                                 return (
@@ -820,7 +954,7 @@ export const Admin = () => {
                           control={
                             <Switch
                               checked={
-                                updatedPollData != null &&
+                                updatedPollData !== null &&
                                 updatedPollData["is_private"]
                               }
                               onChange={() =>
@@ -832,7 +966,7 @@ export const Admin = () => {
                             />
                           }
                           label={
-                            updatedPollData != null &&
+                            updatedPollData !== null &&
                             updatedPollData["is_private"] ? (
                               <Box
                                 component="span"
@@ -857,7 +991,7 @@ export const Admin = () => {
                         />
                         <Collapse
                           in={
-                            updatedPollData != null &&
+                            updatedPollData !== null &&
                             updatedPollData["is_private"]
                           }
                         >
@@ -916,20 +1050,20 @@ export const Admin = () => {
                           control={
                             <Switch
                               checked={
-                                updatedPollData != null &&
+                                updatedPollData !== null &&
                                 updatedPollData["show_rankings"]
                               }
                               onChange={() =>
                                 updatePollField(
                                   "show_rankings",
-                                  updatedPollData != null &&
+                                  updatedPollData !== null &&
                                     !updatedPollData["show_rankings"]
                                 )
                               }
                             />
                           }
                           label={
-                            updatedPollData != null &&
+                            updatedPollData !== null &&
                             updatedPollData["show_rankings"] ? (
                               <Box
                                 component="span"
@@ -995,7 +1129,7 @@ export const Admin = () => {
                             borderRadius: 2,
                           }}
                         >
-                          <LocalizationProvider dateAdapter={DateAdapter}>
+                          <LocalizationProvider dateAdapter={AdapterMoment}>
                             <DateTimePicker
                               renderInput={(params) => (
                                 <TextField
@@ -1021,11 +1155,11 @@ export const Admin = () => {
                               control={
                                 <Switch
                                   disabled={
-                                    updatedPollData != null &&
+                                    updatedPollData !== null &&
                                     !updatedPollData["show_outcome"]
                                   }
                                   checked={
-                                    updatedPollData != null &&
+                                    updatedPollData !== null &&
                                     updatedPollData["show_outcome"] &&
                                     updatedPollData[
                                       "can_view_outcome_before_closing"
@@ -1042,7 +1176,7 @@ export const Admin = () => {
                                 />
                               }
                               label={
-                                updatedPollData != null &&
+                                updatedPollData !== null &&
                                 updatedPollData["show_outcome"] &&
                                 updatedPollData[
                                   "can_view_outcome_before_closing"
@@ -1079,13 +1213,13 @@ export const Admin = () => {
                           control={
                             <Switch
                               checked={
-                                updatedPollData != null &&
+                                updatedPollData !== null &&
                                 updatedPollData["show_outcome"]
                               }
                               onChange={() => {
                                 updatePollField(
                                   "show_outcome",
-                                  updatedPollData != null &&
+                                  updatedPollData !== null &&
                                     !updatedPollData["show_outcome"]
                                 );
                                 updatePollField(
@@ -1099,7 +1233,536 @@ export const Admin = () => {
                             />
                           }
                           label={
-                            updatedPollData != null &&
+                            updatedPollData !== null &&
+                            updatedPollData["show_outcome"] ? (
+                              <Box
+                                component="span"
+                                sx={{ fontSize: 20, marginLeft: 2 }}
+                              >
+                                {" "}
+                                Anyone with the link can view the outcome.
+                              </Box>
+                            ) : (
+                              <Box
+                                component="span"
+                                sx={{
+                                  color: COLORS.darkgrey,
+                                  fontSize: 20,
+                                  marginLeft: 2,
+                                }}
+                              >
+                                Anyone with the link can view the outcome.
+                              </Box>
+                            )
+                          }
+                        />
+                      </FormGroup>
+                      <Box sx={{ paddingTop: 5 }}>
+                        <Stack direction="row" spacing={5}>
+                          <Button
+                            variant="outlined"
+                            sx={{
+                              textTransform: "none",
+                              fontSize: 20,
+                            }}
+                            onClick={handleReset}
+                          >
+                            Reset
+                          </Button>
+                          {canUpdatePoll() ? (
+                            <Button
+                              variant="contained"
+                              sx={{
+                                textTransform: "none",
+                                fontSize: 20,
+                              }}
+                              onClick={handleUpdatePoll}
+                            >
+                              Update Poll
+                            </Button>
+                          ) : (
+                            <Tooltip title="A title and at least two candidates is required for a poll.">
+                              <span>
+                                <Button
+                                  variant="contained"
+                                  sx={{
+                                    textTransform: "none",
+                                    fontSize: 20,
+                                  }}
+                                  disabled={true}
+                                  onClick={handleUpdatePoll}
+                                >
+                                  Update Poll
+                                </Button>
+                              </span>
+                            </Tooltip>
+                          )}
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </Box>
+                </AccordionDetails>
+              </Accordion>
+              <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel7a-content"
+                  id="panel7a-header"
+                >
+                  Delete the poll.
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Button
+                    sx={{
+                      padding: 1,
+                      textTransform: "none",
+                      fontSize: 20,
+                    }}
+                    variant="contained"
+                    color="error"
+                    onClick={handleDeletePoll}
+                  >
+                    Delete poll: This cannot be undone.
+                  </Button>
+                </AccordionDetails>
+              </Accordion>
+
+                {/*
+
+
+
+              {currentPollData !== null && !currentPollData["is_closed"] && (
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel5a-content"
+                    id="panel5a-header"
+                  >
+                    Close the poll.
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box>
+                      {currentPollData["closing_datetime"] === null
+                        ? "There is no closing date for this poll."
+                        : `The closing date for this poll is ${moment(
+                            currentPollData["closing_datetime"]
+                          ).format("MMMM Do YYYY, h:mm a")} (${
+                            currentPollData["timezone"]
+                          })`}
+                    </Box>
+                    <Box sx={{ marginTop: 2 }}>
+                      <Button
+                        sx={{
+                          textTransform: "none",
+                          fontSize: 20,
+                        }}
+                        onClick={handleClosePoll}
+                        variant="outlined"
+                      >
+                        Close poll
+                      </Button>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              )}
+              <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls="panel6a-content"
+                  id="panel6a-header"
+                >
+                  Update the poll.
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Box sx={{ padding: 2 }}>
+                    <Stack spacing={2}>
+                      {updatedPollData !== null && (
+                        <FormGroup sx={{ marginBottom: 2 }}>
+                          <TextField
+                            fullWidth
+                            error={
+                              updatedPollData !== null &&
+                              isEmpty(updatedPollData["title"])
+                                ? true
+                                : false
+                            }
+                            helperText={
+                              updatedPollData !== null &&
+                              isEmpty(updatedPollData["title"])
+                                ? "Please enter a title for the poll."
+                                : ""
+                            }
+                            value={updatedPollData["title"]}
+                            onChange={(ev) =>
+                              updatePollField("title", ev.target.value)
+                            }
+                            label="Poll Title"
+                            variant="standard"
+                          />
+                        </FormGroup>
+                      )}
+
+                      {updatedPollData !== null && (
+                        <FormGroup sx={{ marginBottom: 2 }}>
+                          <TextField
+                            fullWidth
+                            multiline
+                            value={updatedPollData["description"]}
+                            onChange={(ev) =>
+                              updatePollField("description", ev.target.value)
+                            }
+                            label="Description"
+                          />
+                        </FormGroup>
+                      )}
+                      {updatedPollData !== null && (
+                        <Box>
+                          <Box sx={{ marginTop: 5 }}>Candidates</Box>
+                          {currentPollData["num_ballots"] === 0 ? (
+                            <Stack sx={{ padding: 2 }} spacing={2}>
+                              {candList.map((c, cidx) => {
+                                return (
+                                  <Input
+                                    sx={{
+                                      marginBottom: 1,
+                                      width: { xs: "100%", md: "50%" },
+                                    }}
+                                    variant="standard"
+                                    value={c}
+                                    label={`Candidate ${cidx + 1}`}
+                                    endAdornment={
+                                      <InputAdornment position="end">
+                                        <IconButton
+                                          aria-label="toggle password visibility"
+                                          onClick={() => handleRemoveCand(cidx)}
+                                          edge="end"
+                                        >
+                                          <DeleteForeverIcon />
+                                        </IconButton>
+                                      </InputAdornment>
+                                    }
+                                    onChange={(ev) =>
+                                      handleUpdateCandList(
+                                        cidx,
+                                        ev.target.value
+                                      )
+                                    }
+                                    key={cidx}
+                                  />
+                                );
+                              })}
+                              <Fab
+                                onClick={handleAddCandList}
+                                variant="extended"
+                                size="small"
+                                color="primary"
+                                aria-label="add"
+                                sx={{
+                                  width: 200,
+                                  marginTop: 4,
+                                  marginLeft: 3,
+                                  paddingLeft: 2,
+                                  paddingRight: 2,
+                                }}
+                              >
+                                <AddBoxOutlinedIcon sx={{ marginRight: 1 }} />{" "}
+                                Add Candidate
+                              </Fab>
+                            </Stack>
+                          ) : (
+                            <Box>
+                              Since voters have already submitted ballots, you
+                              cannot update the candidates.{" "}
+                            </Box>
+                          )}
+                        </Box>
+                      )}
+
+                      <FormGroup>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={
+                                updatedPollData !== null &&
+                                updatedPollData["is_private"]
+                              }
+                              onChange={() =>
+                                updatePollField(
+                                  "is_private",
+                                  !updatedPollData["is_private"]
+                                )
+                              }
+                            />
+                          }
+                          label={
+                            updatedPollData !== null &&
+                            updatedPollData["is_private"] ? (
+                              <Box
+                                component="span"
+                                sx={{ fontSize: 20, marginLeft: 2 }}
+                              >
+                                {" "}
+                                Make the poll private.
+                              </Box>
+                            ) : (
+                              <Box
+                                component="span"
+                                sx={{
+                                  color: COLORS.darkgrey,
+                                  fontSize: 20,
+                                  marginLeft: 2,
+                                }}
+                              >
+                                Make the poll private.
+                              </Box>
+                            )
+                          }
+                        />
+                        <Collapse
+                          in={
+                            updatedPollData !== null &&
+                            updatedPollData["is_private"]
+                          }
+                        >
+                          <Box
+                            sx={{
+                              padding: 3,
+                              marginTop: 2,
+                              backgroundColor: "inherit",
+                              borderRadius: 2,
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                padding: 0,
+                                marginTop: 0,
+                                marginBottom: 4,
+                                backgroundColor: "inherit",
+                              }}
+                            >
+                              Give the list of emails for the additional voters
+                              that will participate in the poll. No existing
+                              voters will be removed. Each voter will receive a
+                              unique link to access the poll. Enter the emails
+                              separated by a comma, a space or a newline.{" "}
+                              <em>No emails will be saved.</em>{" "}
+                            </Box>
+                            <Box
+                              sx={{
+                                width: "50%",
+                                padding: 0,
+                                marginTop: 0,
+                                marginBottom: 4,
+                                backgroundColor: "inherit",
+                              }}
+                            >
+                              <TextField
+                                id="email-list"
+                                label="Email List"
+                                multiline
+                                fullWidth
+                                error={invalidEmail.length > 0}
+                                helperText={
+                                  invalidEmail.length > 0 ? invalidEmail : null
+                                }
+                                value={emailList}
+                                onChange={handleEmailList}
+                                variant="standard"
+                              />
+                            </Box>
+                          </Box>
+                        </Collapse>
+                      </FormGroup>
+
+                      <FormGroup>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={
+                                updatedPollData !== null &&
+                                updatedPollData["show_rankings"]
+                              }
+                              onChange={() =>
+                                updatePollField(
+                                  "show_rankings",
+                                  updatedPollData !== null &&
+                                    !updatedPollData["show_rankings"]
+                                )
+                              }
+                            />
+                          }
+                          label={
+                            updatedPollData !== null &&
+                            updatedPollData["show_rankings"] ? (
+                              <Box
+                                component="span"
+                                sx={{ fontSize: 20, marginLeft: 2 }}
+                              >
+                                {" "}
+                                Show anonymized voter rankings.
+                              </Box>
+                            ) : (
+                              <Box
+                                component="span"
+                                sx={{
+                                  color: COLORS.darkgrey,
+                                  fontSize: 20,
+                                  marginLeft: 2,
+                                }}
+                              >
+                                Show anonymized voter rankings.
+                              </Box>
+                            )
+                          }
+                        />
+                      </FormGroup>
+
+                      <FormGroup>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={showGetDate}
+                              onChange={handleShowDate}
+                            />
+                          }
+                          label={
+                            showGetDate ? (
+                              <Box
+                                component="span"
+                                sx={{ fontSize: 20, marginLeft: 2 }}
+                              >
+                                {" "}
+                                Add a closing date for the poll.
+                              </Box>
+                            ) : (
+                              <Box
+                                component="span"
+                                sx={{
+                                  color: COLORS.darkgrey,
+                                  fontSize: 20,
+                                  marginLeft: 2,
+                                }}
+                              >
+                                Add a closing date for the poll.
+                              </Box>
+                            )
+                          }
+                        />
+                      </FormGroup>
+                      <Collapse in={showGetDate}>
+                        <Box
+                          sx={{
+                            padding: 3,
+                            marginTop: 2,
+                            backgroundColor: "inherit",
+                            borderRadius: 2,
+                          }}
+                        >
+                          <LocalizationProvider dateAdapter={AdapterMoment}>
+                            <DateTimePicker
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  error={dateErrorText.length > 0}
+                                  helperText={
+                                    dateErrorText && dateErrorText.length > 0
+                                      ? dateErrorText
+                                      : null
+                                  }
+                                />
+                              )}
+                              label="Closing date & time"
+                              value={closingDate}
+                              onChange={(closingDate) => {
+                                handleClosingDate(closingDate);
+                              }}
+                              minDate={moment().subtract(1, "day")}
+                            />
+                          </LocalizationProvider>
+                          <FormGroup sx={{ marginTop: 2 }}>
+                            <FormControlLabel
+                              control={
+                                <Switch
+                                  disabled={
+                                    updatedPollData !== null &&
+                                    !updatedPollData["show_outcome"]
+                                  }
+                                  checked={
+                                    updatedPollData !== null &&
+                                    updatedPollData["show_outcome"] &&
+                                    updatedPollData[
+                                      "can_view_outcome_before_closing"
+                                    ]
+                                  }
+                                  onChange={() =>
+                                    updatePollField(
+                                      "can_view_outcome_before_closing",
+                                      !updatedPollData[
+                                        "can_view_outcome_before_closing"
+                                      ]
+                                    )
+                                  }
+                                />
+                              }
+                              label={
+                                updatedPollData !== null &&
+                                updatedPollData["show_outcome"] &&
+                                updatedPollData[
+                                  "can_view_outcome_before_closing"
+                                ] ? (
+                                  <Box
+                                    component="span"
+                                    sx={{ fontSize: 20, marginLeft: 2 }}
+                                  >
+                                    {" "}
+                                    Voters can view poll results before closing
+                                    date.
+                                  </Box>
+                                ) : (
+                                  <Box
+                                    component="span"
+                                    sx={{
+                                      color: COLORS.darkgrey,
+                                      fontSize: 20,
+                                      marginLeft: 2,
+                                    }}
+                                  >
+                                    Voters can view poll results before closing
+                                    date.
+                                  </Box>
+                                )
+                              }
+                            />
+                          </FormGroup>
+                        </Box>
+                      </Collapse>
+
+                      <FormGroup>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              checked={
+                                updatedPollData !== null &&
+                                updatedPollData["show_outcome"]
+                              }
+                              onChange={() => {
+                                updatePollField(
+                                  "show_outcome",
+                                  updatedPollData !== null &&
+                                    !updatedPollData["show_outcome"]
+                                );
+                                updatePollField(
+                                  "can_view_outcome_before_closing",
+                                  !updatedPollData["show_outcome"] &&
+                                    updatedPollData[
+                                      "can_view_outcome_before_closing"
+                                    ]
+                                );
+                              }}
+                            />
+                          }
+                          label={
+                            updatedPollData !== null &&
                             updatedPollData["show_outcome"] ? (
                               <Box
                                 component="span"
@@ -1192,6 +1855,7 @@ export const Admin = () => {
                   </Button>
                 </AccordionDetails>
               </Accordion>
+                  */}
               <Snackbar
                 anchorOrigin={{ vertical: "top", horizontal: "center" }}
                 open={showErrorMessage}

@@ -6,6 +6,7 @@ import QuestionAnswerOutlinedIcon from "@mui/icons-material/QuestionAnswerOutlin
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { grey } from "@mui/material/colors";
 import Popover from "@mui/material/Popover";
+var deepEqual = require('deep-equal')
 
 export const HideExplanationButton = ({
   buttonText,
@@ -253,6 +254,6 @@ export const winnerStr3 = (winners) => {
   }
 };
 
-export const areEqual = (prevProps, nextProps) => {console.log("return TRUE!!!"); return true}
+export const areEqual = (prevProps, nextProps) => {console.log("areEqual return TRUE!!!"); console.log(prevProps); console.log("nextProps"); console.log(nextProps); console.log(deepEqual(prevProps, nextProps)); return deepEqual(prevProps, nextProps)}
 
 

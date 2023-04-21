@@ -16,7 +16,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import moment from "moment";
 
-export const PollLinks = ({ resetForm }) => {
+export const PollLinks = ({ handleReset }) => {
   const newPollState = useNewPollState();
   const [emailList, setEmailList] = useState([]);
   const [emailListStr, setEmailListStr] = useState("");
@@ -130,7 +130,7 @@ export const PollLinks = ({ resetForm }) => {
   const handleSendEmails = () => {
     axios
       .post(
-        `${API_URL}/send_emails/${newPollState.id.get()}?oid=${newPollState.owner_id.get()}`,
+        `${API_URL}/emails/send_to_voters/${newPollState.id.get()}?oid=${newPollState.owner_id.get()}`,
         {
           emails: emailList,
           link: voteUrl,
@@ -143,14 +143,14 @@ export const PollLinks = ({ resetForm }) => {
         console.log(emailList);
         console.log(
           "The vote link was sent to " +
-            (emailList.length == 1
+            (emailList.length === 1
               ? "1 person."
               : emailList.length.toString() + " people.")
         );
         setShowMessage(true);
         setMessage(
           "The vote link was sent to " +
-            (emailList.length == 1
+            (emailList.length === 1
               ? "1 person."
               : emailList.length.toString() + " people.")
         );
@@ -167,9 +167,9 @@ export const PollLinks = ({ resetForm }) => {
     console.log(newPollState.closing_datetime.get());
     axios
       .post(
-        `${API_URL}/send_owner_email/${newPollState.id.get()}?oid=${newPollState.owner_id.get()}`,
+        `${API_URL}/emails/send_to_owner/${newPollState.id.get()}?oid=${newPollState.owner_id.get()}`,
         {
-          emails: emailList,
+          emails: ownerEmailList,
           title: newPollState.title.get(),
           vote_link: voteUrlOid,
           results_link: resultsUrlOid,
@@ -202,12 +202,12 @@ export const PollLinks = ({ resetForm }) => {
           {newPollState.is_private.get() ? (
             <Box sx={{ marginBottom: 1 }}>
               The poll is private. An email was sent to{" "}
-              {newPollState.voter_emails.get().length == 1
+              {newPollState.voter_emails.get().length === 1
                 ? "1 person"
                 : newPollState.voter_emails.get().length.toString() +
                   " people"}{" "}
               with{" "}
-              {newPollState.voter_emails.get().length == 1
+              {newPollState.voter_emails.get().length === 1
                 ? "a personalized link"
                 : "personalized links"}{" "}
               to vote in the poll.
@@ -260,7 +260,7 @@ export const PollLinks = ({ resetForm }) => {
                   <Button
                     sx={{ textTransform: "none", fontSize: 20 }}
                     variant="outlined"
-                    disabled={emailList.length == 0}
+                    disabled={emailList.length === 0}
                     onClick={handleSendEmails}
                   >
                     Send Email
@@ -369,7 +369,7 @@ export const PollLinks = ({ resetForm }) => {
             <Button
               sx={{ textTransform: "none", fontSize: 20 }}
               variant="outlined"
-              disabled={ownerEmailList.length == 0}
+              disabled={ownerEmailList.length === 0}
               onClick={handleSendOwnerEmail}
             >
               Send Email
@@ -384,7 +384,7 @@ export const PollLinks = ({ resetForm }) => {
             variant="contained"
             color="primary"
             sx={{ paddingLeft: 2, paddingRight: 2 }}
-            onClick={resetForm}
+            onClick={handleReset}
           >
             Create a new poll
           </Button>

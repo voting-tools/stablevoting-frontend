@@ -4,7 +4,7 @@ import Candidate from "./Candidate";
 import Box from "@mui/material/Box";
 
 
-export const CandidateBox = ({ candBox, candidates }) => {
+export const CandidateBox = ({ candBox, candidates, tightLayout, onlyDisplay }) => {
   return (
     <Box
       component="div"
@@ -22,26 +22,26 @@ export const CandidateBox = ({ candBox, candidates }) => {
         marginBottom: "1.5rem",
       }}
     >
-      <Box
+      {tightLayout && candBox.title === "Candidates" ? <span/> : <Box
         component="div"
         sx={{
           minHeight: "45px",
           lineHeight: "45px",
-          minWidth: "100px",
-          maxWidth: "100px",
+          minWidth: tightLayout ? "50px" : "100px",
+          maxWidth: tightLayout ? "50px" : "100px",
           marginRight: 4,
           flexGrow: 1,
           fontWeight: 600,
           verticalAlign: "middle",
           textAlign: "left",
-          paddingLeft:3,
+          paddingLeft: 3,
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
         }}
-      >
+      > 
         {candBox.title}
-      </Box>
-      <Droppable droppableId={candBox.id} direction="horizontal">
+      </Box>}
+      <Droppable droppableId={candBox.id} direction="horizontal" >
         {(provided, snapshot) => (
           <Box
             component="div"
@@ -61,7 +61,7 @@ export const CandidateBox = ({ candBox, candidates }) => {
             }}
           >
             {candidates.map((cand, index) => (
-              <Candidate key={cand.id} cand={cand} index={index} />
+              <Candidate key={cand.id} cand={cand} index={index} tightLayout = {tightLayout} onlyDisplay={onlyDisplay} />
             ))}
             {provided.placeholder}
           </Box>

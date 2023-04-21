@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
@@ -12,6 +13,7 @@ import axios from "axios";
 import { API_URL, isValidEmail } from "./helpers";
 
 export const Contact = (props) => {
+  const matches = useMediaQuery("(min-width:600px)");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -25,7 +27,7 @@ export const Contact = (props) => {
   }, []);
   const sendMessage = (data) => {
     axios
-      .post(`${API_URL}/sendmessage`, {
+      .post(`${API_URL}/emails/send_contact_form`, {
         name: name,
         email: email,
         message: message,
@@ -45,37 +47,46 @@ export const Contact = (props) => {
   const isEmpty = (s) => s.replace(/\s/g, "") === "";
   return (
     <div>
-      <Container
-        maxWidth={false}
-        sx={{
-          width: "100%",
-          paddingLeft: "0px !important",
-          paddingRight: "0px !important",
-        }}
-      >
+    <Container
+      maxWidth={false}
+      sx={{
+        width: "100%",
+        marginTop: "50px",
+        maxWidth:1000,
+        paddingLeft:5, 
+        paddingRight:5,
+        marginBottom: 20
+      }}
+    >
         <Box
           sx={{
             marginLeft: "auto",
             marginRight: "auto",
-            maxWidth: 1000,
-            my: { xs: 3, md: 6 },
-            p: { xs: 5, md: 7 },
+            paddingTop:0,
           }}
         >
           <Stack spacing={5}>
+          <Box           
+          sx={{
+            fontSize: "20px ",
+          }}
+>
+        Please use the space below to report bugs or request features. If you leave your email address, we will respond as soon as possible. We look forward to hearing from you!
+        </Box>
+
             <TextField
               value={name}
               label="Name"
+              variant="outlined"
               onChange={(ev) => setName(ev.target.value)}
-              variant="standard"
             />
 
             <TextField
               value={email}
-              label="Email"
+              label="Email (Optional)"
+              variant="outlined"
               error={!isEmpty(email) && !isValidEmail(email)}
               onChange={(ev) => setEmail(ev.target.value)}
-              variant="standard"
             />
             <TextField
               value={message}
@@ -93,9 +104,9 @@ export const Contact = (props) => {
               }}
             >
               <Button
-                sx={{ fontSize: 16, width: "50%", marginTop: 2 }}
+                sx={{ fontSize: 18, width: "50%", marginTop: 2, textTransform:"none" }}
                 variant="contained"
-                disabled={message.replace(/\s/g, "") === ""}
+                disabled={(isEmpty(message) && isEmpty(email)) || (!isEmpty(message) && !isEmpty(email) && !isValidEmail(email)) || (isEmpty(message) &&  isValidEmail(email))}
                 onClick={sendMessage}
               >
                 {" "}

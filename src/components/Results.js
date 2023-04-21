@@ -43,7 +43,26 @@ import {
   winnerStr,
 } from "./resultsHelpers";
 
-const UniqueUndefeatedExplanation = memo(
+
+const WinnerString = ({ winners }) => {
+  //console.log(winners)
+  if (winners.length === 1) {
+    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winner is  <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[0]}</Typography>.</Typography>)
+  }
+  else if (winners.length === 2) {
+    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[0]}</Typography> and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[1]}.</Typography></Typography>)
+  }
+  else if (winners.length > 2) {
+    var lastWinner = winners[winners.length - 1];
+    var otherWinners = winners.slice(0, -1);
+    //console.log(otherWinners)
+    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are {otherWinners.map((w) => <span><Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{w}</Typography>, </span>)} and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{lastWinner}</Typography>.</Typography>)
+  }
+
+}
+
+
+const UniqueUndefeatedExplanation = (
   ({
     margins,
     undefeatedCands,
@@ -220,7 +239,7 @@ const UniqueUndefeatedExplanation = memo(
   }
 );
 
-const UndefeatedExplanation = memo(
+const UndefeatedExplanation = (
   ({
     margins,
     cycles,
@@ -749,9 +768,6 @@ const Explanation = memo(
                                 }}
                               >
                                 The Stable Voting{" "}
-                                {console.log("winners is ")}
-                                {console.log(winners.split(","))}
-                                {console.log(winners.split(",").length === 1)}
                                 {winners.split(",").length === 1
                                   ? "winner is"
                                   : "winners are"}{" "}
@@ -864,7 +880,7 @@ const Explanation = memo(
   }
 ); // end explanation
 
-export const Results = ({ pollId }) => {
+export const Results = ({ pollId, demoRankings }) => {
   const [showNotFoundMessage, setShowNotFoundMessage] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -874,6 +890,8 @@ export const Results = ({ pollId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [pollOutcome, setPollOutcome] = useState({
     title: "",
+    no_candidates_ranked: false,
+    one_ranked_candidate: false,
     candidates: [],
     canView: true,
     closingDateTimeStr: null,
@@ -896,21 +914,33 @@ export const Results = ({ pollId }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const matches = useMediaQuery("(min-width:600px)");
 
-  var { id, allowmultiple } = params;
+  var { id } = params;
   const vid = searchParams.get("vid");
   const oid = searchParams.get("oid");
-
+  //console.log("demoRanking")
+  //console.log(demoRankings)
   id = id == undefined ? pollId : id;
 
-  console.log("id");
-  console.log(id);
+  if(demoRankings !== undefined) {
+    var api_url = `${API_URL}/polls/demo_outcome/`
+    //console.log("Loading demo poll....")
+    var submittedRankings = {"rankings": demoRankings}
+
+  }
+  else {
+    var api_url = `${API_URL}/polls/outcome/${id}?oid=${oid}&vid=${vid}`
+    var submittedRankings = {}
+  }
+
   useEffect(() => {
     axios
-      .get(`${API_URL}/o/${id}?oid=${oid}&vid=${vid}`)
+      .post(api_url, submittedRankings)
       .then((resp) => {
         setPollOutcome({
           title: resp.data["title"],
           candidates: Object.keys(resp.data["margins"]),
+          no_candidates_ranked: resp.data["no_candidates_ranked"],
+          one_ranked_candidate: resp.data["one_ranked_candidate"],
           canView: resp.data["can_view"],
           closingDateTimeStr: resp.data["closing_datetime"],
           timezone: resp.data["timezone"],
@@ -932,8 +962,8 @@ export const Results = ({ pollId }) => {
           columns: resp.data["columns"],
           allowShowProfile: resp.data["show_rankings"],
         });
-        console.log("POLL OUTCOME");
-        console.log(resp.data);
+        //console.log("POLL OUTCOME");
+        //console.log(resp.data);
         setIsLoading(false);
         //window.history.replaceState({}, document.title)
       })
@@ -943,9 +973,8 @@ export const Results = ({ pollId }) => {
         setShowNotFoundMessage(true);
         setIsLoading(false);
       });
-  }, []);
+  }, [demoRankings]);
 
-  
   return (
     <>
       <Container maxWidth="lg" sx={{ marginBottom: 10 }}>
@@ -1021,7 +1050,10 @@ export const Results = ({ pollId }) => {
                       }}
                     >
                       <Stack spacing={2} sx={{ fontSize: 20 }}>
-                        <Box>The {winnerStr(pollOutcome.svWinners)}.</Box>
+                        {!pollOutcome.no_candidates_ranked ? 
+                        <WinnerString winners = {pollOutcome.svWinners} />:
+                        "No candidates were ranked by the voters."
+                        }
                         <Box>
                           {pollOutcome.numVoters === 1
                             ? "1 person "
@@ -1082,8 +1114,8 @@ export const Results = ({ pollId }) => {
                           fontStyle: "inherit",
                           marginTop: 0,
                         }}>
-
-                          Explanation of winner is too complicated to display. 
+                          {pollOutcome.no_candidates_ranked ? "": pollOutcome.one_ranked_candidate ? `${pollOutcome.candidates[0]} is the only candidate that is ranked by any voter.`: "Explanation of winner is too complicated to display."}
+                          
                       </Box>
                   </Grid> : 
                   <Grid item xs={12}>
@@ -1157,8 +1189,7 @@ export const Results = ({ pollId }) => {
                       <Collapse in={showProfile}>
                         <Box sx={{ marginTop: 4, overflow: "scroll" }}>
                           <Profile
-                            columns={pollOutcome.columns}
-                            numRows={pollOutcome.numRows}
+                            columnData={{"columns": pollOutcome.columns, "numRows": pollOutcome.numRows}}
                             cand1={cand1}
                             cand2={cand2}
                           />

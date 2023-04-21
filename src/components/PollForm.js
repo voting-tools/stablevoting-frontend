@@ -9,7 +9,8 @@ import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import Fade from "@mui/material/Fade";
 
 import { useNewPollState } from "./NewPollStore";
-export const PollForm = ({ resetForm, handleNext }) => {
+
+export const PollForm = ({ handleReset, handleNext, handleGotoLinks }) => {
   const {
     handleSubmit,
     setValue,
@@ -23,20 +24,17 @@ export const PollForm = ({ resetForm, handleNext }) => {
   } = useForm();
 
   const newPollState = useNewPollState();
-  console.log(newPollState.title.get())
-  console.log(newPollState.candidates.get())
   const onSubmit = (data) => {
     let cands = [];
     for (const key in data) {
       if (key.startsWith("C") && data[key] !== "") {
-        if (!cands.includes(data[key])) {
-          cands.push(data[key]);
+        if (!cands.includes(data[key].trim())) {
+          cands.push(data[key].trim());
         }
       }
     }
     newPollState.merge({
          title: data["title"],
-         description: data["description"],
          candidates: cands
         });
     console.log(newPollState.candidates.get())
@@ -55,7 +53,7 @@ export const PollForm = ({ resetForm, handleNext }) => {
   }
 
   return (
-    <Box component="div" variant={"body1"} sx={{ p: 2, marginTop: 2 }}>
+    <Box component="div" variant={"body1"} sx={{ p: 2, marginTop: 7 }}>
       <form onSubmit={handleSubmit(onSubmit)}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -79,17 +77,6 @@ export const PollForm = ({ resetForm, handleNext }) => {
               )}
             />
           </Grid>
-          <Grid item xs={12}>
-            <Controller
-              name="description"
-              control={control}
-              defaultValue={newPollState.description.get()}
-              rules={{ required: false }}
-              render={({ field }) => (
-                <TextField id="poll-description" fullWidth multiline label="Description" {...field} />
-              )}
-            />
-          </Grid>
           <Grid item xs={12} sm={6}>
             <Controller
               name="C1"
@@ -101,7 +88,7 @@ export const PollForm = ({ resetForm, handleNext }) => {
               }
               rules={{
                 required: true,
-                validate: (value) => value !== getValues("C2"),
+                validate: (value) => value.trim() !== getValues("C2").trim(),
               }}
               render={({ field }) => (
                 <TextField
@@ -128,7 +115,7 @@ export const PollForm = ({ resetForm, handleNext }) => {
               }
               rules={{
                 required: true,
-                validate: (value) => value !== getValues("C1"),
+                validate: (value) => value.trim() !== getValues("C1").trim(),
               }}
               render={({ field }) => (
                 <TextField
@@ -200,8 +187,8 @@ export const PollForm = ({ resetForm, handleNext }) => {
               <Button
                 id = "reset-form"
                 onClick={() => {
-                  reset({ title: "", description: "", C1: "", C2: "" });
-                  resetForm();
+                  reset({ title: "", C1: "", C2: "" });
+                  handleReset();
                 }}
                 sx={{
                   paddingTop: 1,
@@ -217,7 +204,7 @@ export const PollForm = ({ resetForm, handleNext }) => {
                 id="next-button"
                 variant="contained"
                 color="primary"
-                sx={{ paddingLeft: 2, paddingRight: 2 }}
+                sx={{ marginLeft: 2, paddingLeft: 2, paddingRight: 2 }}
                 onClick={handleSubmit(onSubmit)}
               >
                 Next

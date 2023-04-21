@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-import { DragDropContext } from "react-beautiful-dnd";
-import CandidateBox from "./CandidateBox";
 import axios from "axios";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -19,24 +17,16 @@ import moment from "moment";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
 import { grey } from "@mui/material/colors";
-import {  useParams, useSearchParams, Link } from "react-router-dom";
-import { rankLabels, URL, API_URL } from "./helpers";
-import { Collapse } from "@mui/material";
+import { useParams, useSearchParams, Link } from "react-router-dom";
+import {  URL, API_URL, COLORS } from "./helpers";
+import RankingInput from "./RankingInput";
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 export const Vote = () => {
   const params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [rankingState, setRankingState] = useState({
-    candidates: {},
-    candBoxes: {
-      candidates: {
-        id: "candidates",
-        title: "Candidates",
-        candIds: [],
-      },
-    },
-    candBoxOrder: ["candidates"],
-  });
+  const [currentRanking, setCurrentRanking] = useState({})
   const [showButton, setShowButton] = useState(false);
   const [title, setTitle] = useState("");
   const [candidates, setCandidates] = useState([]);
@@ -52,29 +42,29 @@ export const Vote = () => {
   const [showCannotRankMessage, setShowCannotRankMessage] = useState(false);
   const [cannotRankMessage, setCannotRankMessage] = useState("");
   const [alreadyVoted, setAlreadyVoted] = useState(false);
+  const theme = useTheme();
+  const matches = useMediaQuery(theme.breakpoints.down('sm'));
 
   const { id, allowmultiple } = params;
   const vid = searchParams.get("vid");
   const oid = searchParams.get("oid");
-
   const fetchIpAddress = async () =>
     await axios
       .get("https://jsonip.com")
       .then((res) =>
-        allowmultiple === "__scsv"
-          ? setIpAdress("n/a")
-          : setIpAdress(res.data["ip"])
+        setIpAdress(res.data["ip"])
       )
       .catch((err) => setIpAdress("n/a"));
 
   const putRankingData = async (id, rankingData) => {
     axios
-      .post(`${API_URL}/v/${id}?vid=${vid}&oid=${oid}`, rankingData)
+      .post(`${API_URL}/polls/vote/${id}?vid=${vid}&oid=${oid}&allowmultiplevote=${allowmultiple}`, rankingData)
       .then((resp) => {
         setIsSubmitted(true);
         setServerErrorMessage("");
       })
       .catch((err) => {
+        console.log("ERROR!!!!")
         console.log(err.response.data.detail);
         setServerErrorMessage(err.response.data.detail);
       });
@@ -83,7 +73,7 @@ export const Vote = () => {
   useEffect(() => {
     fetchIpAddress();
     axios
-      .get(`${API_URL}/pr/${id}?vid=${vid}`)
+      .get(`${API_URL}/polls/ranking_information/${id}?vid=${vid}&allowmultiplevote=${allowmultiple}`)
       .then((resp) => {
         if (!resp.data["can_vote"]) {
           setShowCannotRankMessage(true);
@@ -91,68 +81,18 @@ export const Vote = () => {
             setCannotRankMessage(
               "This poll is private.  You must use the link provided in the email to vote in the poll."
             );
-          } else if (resp.data["is_closed"]) {
+          } else if (resp.data["is_completed"]) {
             setCannotRankMessage(
-              "The poll is closed, so it is no longer accepting votes."
+              "The poll is completed, so it is no longer accepting votes."
             );
           } else {
             setCannotRankMessage("You are not allowed to vote in this poll.");
           }
         } else {
-          var cands = resp.data["candidates"];
           var ranking = resp.data["ranking"];
           const existingVote = Object.keys(ranking).length !== 0
-          var candidates = Object.fromEntries(
-            cands.map((c, idx) => [
-              `cand-${idx + 1}`,
-              { id: `cand-${idx + 1}`, name: c },
-            ])
-          );
-          var candIds = cands.map((c, idx) => `cand-${idx + 1}`);
-
-          var ranks = cands.map((c, idx) => `rank-${idx + 1}`);
-          var rankBoxes = Object.fromEntries(
-            cands.map((c, idx) => [
-              `rank-${idx + 1}`,
-              {
-                id: `rank-${idx + 1}`,
-                title: rankLabels[idx + 1],
-                candIds: [],
-              },
-            ])
-          );
-
-          var initialData = {
-            candidates: candidates,
-            candBoxes: rankBoxes,
-
-            // Facilitate reordering of the columns
-            candBoxOrder: ["candidates"].concat(ranks),
-          };
-
-          initialData["candBoxes"]["candidates"] = {
-            id: "candidates",
-            title: "Candidates",
-            candIds: candIds,
-          };
-          for (const c in ranking) {
-            var rank = ranking[c];
-            for (const cid in candidates) {
-              if (candidates[cid]["name"] == c) {
-                var cIdx =
-                  initialData["candBoxes"]["candidates"]["candIds"].indexOf(
-                    cid
-                  );
-                initialData["candBoxes"]["candidates"]["candIds"].splice(
-                  cIdx,
-                  1
-                );
-                initialData["candBoxes"][`rank-${rank}`]["candIds"].push(cid);
-              }
-            }
-          }
-          setCandidates(cands);
-          setRankingState(initialData);
+          setCandidates(resp.data["candidates"]);
+          setCurrentRanking(resp.data["ranking"])
           setShowButton(true);
           setAlreadyVoted(existingVote)
           setTitle(resp.data["title"]);
@@ -165,72 +105,6 @@ export const Vote = () => {
       });
   }, [id]);
 
-  const onDragEnd = (result) => {
-    console.log("on DRAGE ENDS");
-    const { destination, source, draggableId } = result;
-
-    if (!destination) {
-      return;
-    }
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-
-    const start = rankingState.candBoxes[source.droppableId];
-    const finish = rankingState.candBoxes[destination.droppableId];
-
-    if (start === finish) {
-      const newCandIds = Array.from(start.candIds);
-      newCandIds.splice(source.index, 1);
-      newCandIds.splice(destination.index, 0, draggableId);
-      const newColumn = {
-        ...start,
-        candIds: newCandIds,
-      };
-
-      const newState = {
-        ...rankingState,
-        candBoxes: {
-          ...rankingState.candBoxes,
-          [newColumn.id]: newColumn,
-        },
-      };
-      setRankingState(newState);
-      return;
-    }
-
-    // Moving from one list to another
-    const startCandIds = Array.from(start.candIds);
-    startCandIds.splice(source.index, 1);
-    const newStart = {
-      ...start,
-      candIds: startCandIds,
-    };
-
-    const finishCandIds = Array.from(finish.candIds);
-    finishCandIds.splice(destination.index, 0, draggableId);
-    const newFinish = {
-      ...finish,
-      candIds: finishCandIds,
-    };
-
-    const newState = {
-      ...rankingState,
-      candBoxes: {
-        ...rankingState.candBoxes,
-        [newStart.id]: newStart,
-        [newFinish.id]: newFinish,
-      },
-    };
-    console.log("newState is ");
-    console.log(newState);
-
-    setRankingState(newState);
-  };
-
   async function copyLinkToClipboard(text) {
     if ("clipboard" in navigator) {
       return await navigator.clipboard.writeText(text);
@@ -240,60 +114,38 @@ export const Vote = () => {
   }
 
   const submitRanking = () => {
-    const ranking = {};
-    for (const rankBoxId in rankingState.candBoxes) {
-      if (rankBoxId !== "candidates") {
-        const rank = parseInt(rankBoxId.split("-")[1]);
-        for (const candId in rankingState.candBoxes[rankBoxId].candIds) {
-          ranking[
-            rankingState.candidates[
-              rankingState.candBoxes[rankBoxId].candIds[candId]
-            ].name
-          ] = rank;
-        }
-      }
-    }
-    if (Object.keys(ranking).length === 0) {
+    console.log("Submit Ranking")
+    console.log(currentRanking)
+    console.log(candidates)
+    if (Object.keys(currentRanking).length === 0) {
       setShowNoRankingErrorMessage(true);
       return;
     }
-    if ((Object.keys(ranking).length > 0) && candidates.some((c) => !Object.keys(ranking).includes(c))){
+    if ((Object.keys(currentRanking).length > 0) && candidates.some((c) => !Object.keys(currentRanking).includes(c))){
       setShowSomeUnrankedMessage(true);
       return;
     }
 
     const rankingData = {
       submission_date: moment().format("DD-MM-YYYY hh:mm:ss"),
-      ranking: ranking,
+      ranking: currentRanking,
       ip: ipAddress,
     };
     putRankingData(id, rankingData);
   };
 
-  const handleSubmitRanking = () => {
-    const ranking = {};
-    for (const rankBoxId in rankingState.candBoxes) {
-      if (rankBoxId !== "candidates") {
-        const rank = parseInt(rankBoxId.split("-")[1]);
-        for (const candId in rankingState.candBoxes[rankBoxId].candIds) {
-          ranking[
-            rankingState.candidates[
-              rankingState.candBoxes[rankBoxId].candIds[candId]
-            ].name
-          ] = rank;
-        }
-      }
-    }
+  const handleSubmitPartialRanking = () => {
 
     const rankingData = {
       submission_date: moment().format("DD-MM-YYYY hh:mm:ss"),
-      ranking: ranking,
+      ranking: currentRanking,
       ip: ipAddress,
     };
     putRankingData(id, rankingData);
   };
+
   return (
-    <Container maxWidth="lg" sx={{ marginTop:5, marginBottom: 10 }}>
+    <Container maxWidth="lg" sx={{ marginTop: 5, marginBottom: 10 }}>
       <Paper elevation={0}>
         {showNotFoundMessage ? (
           <Alert severity="error">
@@ -338,7 +190,7 @@ export const Vote = () => {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      copyLinkToClipboard(`${URL}//results/` + id);
+                      copyLinkToClipboard(`${URL}/results/` + id);
                       setIsCopied(true);
                     }}
                     sx={{ marginTop: 4 }}
@@ -374,7 +226,10 @@ export const Vote = () => {
                     }}
                   >
                     <div>
-                      <Link to={`/results/${id}?vid=${vid}&oid=${oid}`} state={{ newVote: true }}>
+                      <Link
+                        to={`/results/${id}?vid=${vid}&oid=${oid}`}
+                        state={{ newVote: true }}
+                      >
                         {`${URL}/results/${id}?vid=${vid}&oid=${oid}`}
                       </Link>
                     </div>
@@ -390,7 +245,9 @@ export const Vote = () => {
                       <Button
                         variant="outlined"
                         onClick={() => {
-                          copyLinkToClipboard(`${URL}/results/${id}?vid=${vid}&oid=${oid}`);
+                          copyLinkToClipboard(
+                            `${URL}/results/${id}?vid=${vid}&oid=${oid}`
+                          );
                           setIsCopied(true);
                         }}
                         sx={{ marginTop: 4 }}
@@ -421,21 +278,28 @@ export const Vote = () => {
                     >
                       Vote in the poll {title}
                     </Typography>
-                    {alreadyVoted ? <Typography
-                      component="p"
-                      align="center"
-                      sx={{ marginBottom: "30px", fontSize: 20 }}
-                    >
-                    You already submitted the ballot below. You can change your ballot before the poll closes <Link to = {`/results/${id}?vid=${vid}`}>see the current results. </Link>
-                    </Typography> : 
-
-                    <Typography
-                      component="p"
-                      align="center"
-                      sx={{ marginBottom: "30px", fontSize: 20 }}
-                    >
-                      Drag each candidate to a place below to create a ranking.
-                    </Typography>}
+                    {alreadyVoted ? (
+                      <Typography
+                        component="p"
+                        align="center"
+                        sx={{ marginBottom: "30px", fontSize: 20 }}
+                      >
+                        You already submitted the ballot below. You can change
+                        your ballot before the poll closes{" "}
+                        <Link to={`/results/${id}?vid=${vid}`}>
+                          see the current results.{" "}
+                        </Link>
+                      </Typography>
+                    ) : (
+                      <Typography
+                        component="p"
+                        align="center"
+                        sx={{ color:COLORS.primary,  marginBottom: "30px", fontSize: 20 }}
+                      >
+                        Drag each candidate to a place below to create a
+                        ranking.
+                      </Typography>
+                    )}
 
                     <Dialog
                       open={showNoRankingErrorMessage}
@@ -449,12 +313,11 @@ export const Vote = () => {
                       <DialogContent>
                         <DialogContentText id="alert-dialog-description">
                           To rank a candidate, drag a candidate from the top box
-                          to one of the boxes below. You do not need to rank all
-                          the candidates.
+                          to one of the boxes below. {candidates.length > 2 ? "You do not need to rank all the candidates." : ""}
                         </DialogContentText>
                       </DialogContent>
                       <DialogActions>
-                        <Button onClick={handleSubmitRanking}>
+                        <Button onClick={handleSubmitPartialRanking}>
                           Submit without ranking candidates{" "}
                         </Button>
                         <Button
@@ -476,14 +339,24 @@ export const Vote = () => {
                         {"Some candidates are unranked."}
                       </DialogTitle>
                       <DialogContent>
+                      {candidates.length === 2 ?
                         <DialogContentText id="alert-dialog-description">
-                          You have not ranked one or more of the candidates.  This means that you will not have any influence over their performance against other candidates in the poll.  
-                        </DialogContentText>
+ 
+                         Please rank all the candidates before submitting your vote. 
+                        </DialogContentText> : <DialogContentText id="alert-dialog-description">
+ 
+                        You have not ranked one or more of the candidates.
+                        If you leave a candidate unranked, your ballot will have no effect on that candidate's performance against other candidates in the poll.
+                        </DialogContentText> 
+                        }
                       </DialogContent>
                       <DialogActions>
-                        <Button onClick={handleSubmitRanking}>
+                      {candidates.length > 2 ?
+
+                        <Button onClick={handleSubmitPartialRanking}>
                           Submit without ranking all candidates{" "}
-                        </Button>
+                        </Button> :<span/>
+                      }
                         <Button
                           onClick={() => setShowSomeUnrankedMessage(false)}
                           autoFocus
@@ -492,43 +365,11 @@ export const Vote = () => {
                         </Button>
                       </DialogActions>
                     </Dialog>
-
-                    <DragDropContext onDragEnd={onDragEnd}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          marginLeft: "auto",
-                          marginRight: "auto",
-                          width: "100%",
-                        }}
-                      >
-                        <CandidateBox
-                          key="candidates"
-                          candBox={rankingState.candBoxes["candidates"]}
-                          candidates={rankingState.candBoxes[
-                            "candidates"
-                          ].candIds.map(
-                            (candId) => rankingState.candidates[candId]
-                          )}
-                        />
-                        {rankingState.candBoxOrder.map((candBoxId) => {
-                          if (candBoxId !== "candidates") {
-                            const candBox = rankingState.candBoxes[candBoxId];
-                            const candidates = candBox.candIds.map(
-                              (candId) => rankingState.candidates[candId]
-                            );
-                            return (
-                              <CandidateBox
-                                key={candBox.id}
-                                candBox={candBox}
-                                candidates={candidates}
-                              />
-                            );
-                          }
-                        })}
-                      </Box>
-                    </DragDropContext>
+                    <RankingInput 
+                      theCandidates={candidates}
+                      currRanking={currentRanking} 
+                      handleUpdateRanking={setCurrentRanking} 
+                      tightLayout={matches} />
                     {showButton && (
                       <Box
                         sx={{

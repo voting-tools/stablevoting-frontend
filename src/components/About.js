@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link as LinkReact} from "react-router-dom";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
@@ -8,9 +9,20 @@ import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
-import Link from "@mui/material/Link";
+import Link  from "@mui/material/Link";
 import { COLORS, COLORS_RGB } from "./helpers";
 import { styled } from "@mui/material/styles";
+
+const RegLinkReact = styled(LinkReact)(({ theme }) => ({
+  fontSize: "inherit",
+  textDecoration: "none",
+  "&:hover": {
+    textDecoration: "underline",
+    color: `rgba(${COLORS_RGB.primary}, 0.5)`,
+  },
+  color: COLORS.primary,
+}));
+
 
 const RegLink = styled(Link)(({ theme }) => ({
   fontSize: "inherit",
@@ -58,15 +70,27 @@ export const About = (props) => {
 
   return (
     <div>
-      <Container
-        maxWidth="xl"
-        sx={{
-          marginBottom: 10,
-          width: "100%",
-        }}
-      >
-        <Box sx={{ marginLeft: 5, marginRight: 5, marginTop: 0 }}>
+    <Container
+      maxWidth={false}
+      sx={{
+        width: "100%",
+        marginTop: "50px",
+        maxWidth:1000,
+        paddingLeft:5, 
+        paddingRight:5,
+        marginBottom: 20
+      }}
+    >
+        <Box sx={{ marginLeft: "auto", marginRight: "auto",   textAlign:"left", marginTop: 0            
+}}>
           <Paper variant="elevation" elevation={0}>
+
+          <Question>Mission</Question>
+            <Paragraph>
+            Our goal is to translate academic <RegLinkReact to="/research">research</RegLinkReact> on voting into a beneficial service for the public, as well as to improve our understanding of voting by the study of real elections. We offer Stable Voting as a free service, we maintain your <RegLinkReact to="/privacy">privacy</RegLinkReact>, and we hope to improve the site with your <RegLinkReact to="/contact">feedback</RegLinkReact>.
+            </Paragraph>
+
+
             <Question>Why Stable Voting?</Question>
             <Paragraph>
               Stable Voting respects majority preferences and mitigates the
@@ -342,9 +366,9 @@ export const About = (props) => {
             <Question>Where can I learn more about Stable Voting?</Question>
 
             <Paragraph>
-              For those interested in academic research on Stable Voting:
+              See the <RegLinkReact to="/research">research</RegLinkReact>  or   <RegLinkReact to="/faq">FAQ</RegLinkReact> pages for more information or the <RegLinkReact to="/demo">demo</RegLinkReact> page to see Stable Voting in action.   
             </Paragraph>
-            <Paragraph>
+            {/*<Paragraph>
               See "
               <RegLink href="https://arxiv.org/abs/2108.00542" target="_blank">
                 Stable Voting
@@ -359,7 +383,7 @@ export const About = (props) => {
               </RegLink>
               " by Wesley H. Holliday and Eric Pacuit to learn more about the
               concept of defeat used to resolve majority cycles.
-            </Paragraph>
+                </Paragraph>*/}
           </Paper>
         </Box>
       </Container>

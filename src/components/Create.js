@@ -1,66 +1,82 @@
 import React, { useState, useEffect } from "react";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import Container from "@mui/material/Container";
-
 import Paper from "@mui/material/Paper";
-
-import PollForm from "./PollForm";
-import Review from "./Review";
-import PollLinks from "./PollLinks";
-
+import Typography from "@mui/material/Typography";
+import Stepper from "@mui/material/Stepper";
+import Step from "@mui/material/Step";
+import StepLabel from "@mui/material/StepLabel";
 import { resetPoll } from "./NewPollStore";
 
-export const Create = (props) => {
+import PollForm from "./PollForm";
+import PollSettings from "./PollSettings";
+import PollLinks from "./PollLinks";
+
+export default function Create() {
   const [activeStep, setActiveStep] = useState(0);
-  const matches = useMediaQuery("(min-width:600px)");
+
   useEffect(() => {
     window.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   }, []);
+
   const handleNext = () => {
-    setActiveStep(activeStep + 1);
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
-  const resetForm = () => {
+
+  const handleGotoLinks = () => {
+    setActiveStep(2);
+  };
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleReset = () => {
     resetPoll();
     setActiveStep(0);
   };
 
-  const handleBack = () => {
-    setActiveStep(activeStep - 1);
-  };
-
   return (
-    <div>
-      <Container
-        maxWidth={false}
-        sx={{
-          width: "100%",
-          paddingLeft: "0px !important",
-          paddingRight: "0px !important",
-        }}
-      >
-        <Container maxWidth="lg" sx={{ marginBottom: 10 }}>
-          <Paper variant="elevated" elevated={0}>
-            <React.Fragment>
-              {activeStep === 0 && (
-                <PollForm resetForm={resetForm} handleNext={handleNext} />
-              )}
-              {activeStep === 1 && (
-                <Review
-                  resetForm={resetForm}
-                  handleNext={handleNext}
-                  handleBack={handleBack}
-                />
-              )}
-              {activeStep === 2 && <PollLinks resetForm={resetForm} />}
-            </React.Fragment>
-          </Paper>
-        </Container>
-      </Container>
-    </div>
+    <Container
+      maxWidth={false}
+      sx={{
+        width: "100%",
+        marginTop: "50px",
+        maxWidth:1000,
+        paddingLeft:5, 
+        paddingRight:5,
+        marginBottom: 20
+      }}
+    >
+        <Paper variant="elevated" elevated={0}>
+          <Stepper activeStep={activeStep}>
+            <Step key={1}>
+              <StepLabel>Add poll name and candidates</StepLabel>
+            </Step>
+            <Step key={2}>
+              <StepLabel optional = {<Typography variant="caption">Optional</Typography>}>Change poll settings</StepLabel>
+            </Step>
+            <Step key={3}>
+              <StepLabel>Share poll links</StepLabel>
+            </Step>
+          </Stepper>
+          {activeStep === 0 && (
+            <PollForm
+              handleReset={handleReset}
+              handleNext={handleNext}
+              handleGotoLinks={handleGotoLinks}
+            />
+          )}
+          {activeStep === 1 && (
+            <PollSettings
+              handleReset={handleReset}
+              handleNext={handleNext}
+              handleBack={handleBack}
+            />
+          )}
+          {activeStep === 2 && <PollLinks handleReset={handleReset} />}
+        </Paper>
+     </Container>
   );
-};
-
-export default Create;
+}

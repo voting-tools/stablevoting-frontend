@@ -10,9 +10,12 @@ import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import Slide from "@mui/material/Slide";
+import Avatar from "@mui/material/Avatar";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
 import { styled } from "@mui/material/styles";
 import { useNavigate, useMatch, useResolvedPath } from "react-router-dom";
+import ReactVivus from "react-vivus";
+import logo from "./home_images/logo.svg";
 
 import { COLORS } from "./helpers";
 
@@ -68,6 +71,7 @@ const Menu = (props) => {
       <NavButton
         variant="text"
         sx={{
+          marginTop:1.5,
           backgroundColor: match ? COLORS.primary : "white",
           color: match ? "white" : "black",
         }}
@@ -104,7 +108,7 @@ const Menu = (props) => {
           borderBottom: (t) => `0px solid ${t.palette.divider}`,
         }}
       >
-        <Container sx={{ margin: 0, padding: 0 }} maxWidth="none">
+        <Container sx={{ margin: 0, padding: 0 }} maxWidth="xl">
           <Toolbar sx={{ margin: 0, padding: 0 }} disableGutters>
             <Box
               sx={{
@@ -166,7 +170,40 @@ const Menu = (props) => {
                 </MenuItem>
               </MuiMenu>
             </Box>
+            <LogoButton
+              variant="text"
+              sx={{
+                marginLeft: 0,
+                display: { xs: "none", md: "flex" },
+              }}
+              onClick={() => navigate("/")}
+            >
 
+            
+            <Avatar
+                    alt="Logo"
+                    sx={{
+                      background:"white",
+                      minWidth:   "65px",
+                      minHeight:  "65px",
+                      marginRight: 1,
+                    }}
+                  >
+                    <ReactVivus
+                      id="logosvg"
+                      option={{
+                        file: logo,
+                        animTimingFunction: "EASE",
+                        type: "sync",
+                      }}
+                      style={{
+                        height:   "40px",
+                        width:   "40px",
+                      }}
+                    />
+                    
+                  </Avatar>
+                      </LogoButton>
             <LogoButton
               variant="text"
               sx={{
@@ -184,7 +221,11 @@ const Menu = (props) => {
                   fontSize: { lg: 30, md: 24, sm: 20, xs: 20 },
                 }}
               >
-                Stable Voting
+                <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>                     
+                  <Box component="span" sx={{paddingTop:1}}>
+                  Stable Voting
+                  </Box>
+                  </Box>
               </Typography>
             </LogoButton>
 
@@ -199,7 +240,6 @@ const Menu = (props) => {
             >
               <Typography
                 sx={{
-                  display: "box",
                   align: "middle",
                   marginLeft: "auto",
                   marginRight: "auto",

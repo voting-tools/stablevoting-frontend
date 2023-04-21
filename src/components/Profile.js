@@ -35,7 +35,12 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-export const Profile = ({ columns, numRows, cand1, cand2 }) => {
+export const Profile = ({ columnData, cand1, cand2 }) => {
+
+  let columns = columnData["columns"]
+  let numRows = columnData["numRows"]
+  console.log("IN PROFILE")
+  console.log(columns)
   return (
     <TableContainer component={Paper}>
       <Table sx={{ fontSize: 20 }} size="small" aria-label="simple table">

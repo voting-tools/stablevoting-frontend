@@ -13,7 +13,7 @@ export const newPollState = createState({
     voter_emails: [],
     show_rankings: true,
     can_view_outcome_before_closing: false,
-    show_outcome: true
+    show_outcome: true,
   });
 console.log(newPollState.get())
 export const resetPoll = () => {
@@ -29,8 +29,8 @@ export const resetPoll = () => {
         voter_emails: [],
         show_rankings: true,
         can_view_outcome_before_closing: false,
-        show_outcome: true
-    });
+        show_outcome: true,
+        });
 };
   
 export const useNewPollState = () => {

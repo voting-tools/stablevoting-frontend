@@ -4,9 +4,9 @@ import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import EllipsisText from "react-ellipsis-text";
 
-export const Candidate = ({ cand, index }) => {
+export const Candidate = ({ cand, index, tightLayout, onlyDisplay }) => {
   return (
-    <Draggable draggableId={cand.id} index={index}>
+    <Draggable draggableId={cand.id} index={index} isDragDisabled={onlyDisplay}>
       {(provided, snapshot) => (
         <Box
           {...provided.draggableProps}
@@ -15,14 +15,14 @@ export const Candidate = ({ cand, index }) => {
           ref={provided.innerRef}
           sx={{
             padding: 0,
-            minWidth: "150px",
+            minWidth: tightLayout ? "75px" : "150px",
             minHeight: "40px",
             lineHeight: "40px",
             verticalAlign: "middle",
             textAlign: "center",
             border: "2px solid lightgray",
             borderRadius: 2,
-            marginRight: 4,
+            marginRight: tightLayout ? 2 : 4,
             textOverflow: "ellipsis",
             whiteSpace: "nowrap",
             backgroundColor: snapshot.isDragging ? "lightgreen" : "white",
