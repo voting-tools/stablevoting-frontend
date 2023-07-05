@@ -193,9 +193,9 @@ export const listToStr = (list) => {
   }
 };
 
-export const listStrToStr = (listStr) => {
+export const listStrToStr = (listStr, cmap) => {
   const list = listStr.split(",");
-  return listToStr(list);
+  return listToStr(list.map((x)=>cmap[x]));
 };
 
 export const winnerStr = (winners) => {

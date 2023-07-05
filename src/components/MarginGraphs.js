@@ -9,7 +9,7 @@ function areEqual(prevProps, nextProps) { return true}
 
 
 export const MarginSubGraph = memo(
-  ({ margins, winners, currCands, bgColor }) => {
+  ({ margins, winners, currCands, bgColor, cmap }) => {
     var allEdges = [];
     for (var c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
       for (var c2_idx = 0; c2_idx < currCands.length; c2_idx++) {
@@ -21,7 +21,7 @@ export const MarginSubGraph = memo(
               from: c1_idx + 1,
               to: c2_idx + 1,
               label: margins[c1][c2].toString(),
-              title: `The margin of ${c1} vs. ${c2} is ${margins[c1][
+              title: `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
                 c2
               ].toString()}.`,
               font: { background: bgColor },
@@ -38,8 +38,8 @@ export const MarginSubGraph = memo(
         return winners.includes(c)
           ? {
               id: idx + 1,
-              label: c,
-              title: `${c} is a Stable Voting winner`,
+              label: cmap[c],
+              title: `${cmap[c]} is a Stable Voting winner`,
               borderWidth: 2,
               color: {
                 background: "#EEEEEE", //green[200],
@@ -48,7 +48,7 @@ export const MarginSubGraph = memo(
             }
           : {
               id: idx + 1,
-              label: c,
+              label: cmap[c],
               borderWidth: 1,
               color: {
                 background: "#EEEEEE",
@@ -129,7 +129,7 @@ export const MarginSubGraph = memo(
 );
 
 export const MarginSubGraphDefeats = memo(
-  ({ margins, undefeatedCands, currCands, defeats, bgColor }) => {
+  ({ margins, undefeatedCands, currCands, defeats, bgColor, cmap }) => {
     var allEdges = [];
     for (var c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
       for (var c2_idx = 0; c2_idx < currCands.length; c2_idx++) {
@@ -141,7 +141,7 @@ export const MarginSubGraphDefeats = memo(
               from: c1_idx + 1,
               to: c2_idx + 1,
               label: margins[c1][c2].toString(),
-              title: `The margin of ${c1} vs. ${c2} is ${margins[c1][
+              title: `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
                 c2
               ].toString()}. `,
               font: { background: bgColor },
@@ -156,11 +156,11 @@ export const MarginSubGraphDefeats = memo(
     const graph = {
       nodes: currCands.map((c, idx) => {
         return undefeatedCands.includes(c)
-          ? c.length > 5
+          ? cmap[c].length > 5
             ? {
                 id: idx + 1,
-                label: c.slice(0, 5) + "...",
-                title: `${c} is undefeated.`,
+                label: cmap[c].slice(0, 5) + "...",
+                title: `${cmap[c]} is undefeated.`,
                 borderWidth: 2,
                 color: {
                   background: "#EEEEEE", //green[200],
@@ -169,19 +169,19 @@ export const MarginSubGraphDefeats = memo(
               }
             : {
                 id: idx + 1,
-                label: c,
-                title: `${c} is undefeated.`,
+                label: cmap[c],
+                title: `${cmap[c]} is undefeated.`,
                 borderWidth: 2,
                 color: {
                   background: "#EEEEEE", //green[200],
                   border: "black", // green[200],
                 },
               }
-          : c.length > 5
+          : cmap[c].length > 5
           ? {
               id: idx + 1,
-              label: c.slice(0, 5) + "...",
-              title: c,
+              label: cmap[c].slice(0, 5) + "...",
+              title: cmap[c],
               borderWidth: 1,
               color: {
                 background: "#EEEEEE",
@@ -190,7 +190,7 @@ export const MarginSubGraphDefeats = memo(
             }
           : {
               id: idx + 1,
-              label: c,
+              label: cmap[c],
               borderWidth: 1,
               color: {
                 background: "#EEEEEE",
@@ -269,7 +269,7 @@ export const MarginSubGraphDefeats = memo(
 );
 
 export const Cycle = memo(
-  ({ margins, currCands, splittingNum, cycle, bgColor }) => {
+  ({ margins, currCands, splittingNum, cycle, bgColor, cmap }) => {
     var allEdges = [];
     var cycleList = cycle.split(",");
     for (var c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
@@ -286,7 +286,7 @@ export const Cycle = memo(
               from: c1_idx + 1,
               to: c2_idx + 1,
               label: margins[c1][c2].toString(),
-              title: `The margin of ${c1} vs. ${c2} is ${margins[c1][
+              title: `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
                 c2
               ].toString()}.`,
               font: { background: bgColor },
@@ -300,11 +300,11 @@ export const Cycle = memo(
     }
     const graph = {
       nodes: currCands.map((c, idx) => {
-        return c.length > 5
+        return cmap[c].length > 5
           ? {
               id: idx + 1,
-              label: c.slice(0, 5) + "...",
-              title: `${c}`,
+              label: cmap[c].slice(0, 5) + "...",
+              title: `${cmap[c]}`,
               borderWidth: 1,
               color: {
                 background: "#EEEEEE", //green[200],
@@ -313,7 +313,7 @@ export const Cycle = memo(
             }
           : {
               id: idx + 1,
-              label: c,
+              label: cmap[c],
               borderWidth: 1,
               color: {
                 background: "#EEEEEE",

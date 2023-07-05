@@ -35,7 +35,7 @@ const StyledTableRow = styled(TableRow)(({ theme }) => ({
   },
 }));
 
-export const Profile = ({ columnData, cand1, cand2 }) => {
+export const Profile = ({ columnData, cand1, cand2, cmap }) => {
 
   let columns = columnData["columns"]
   let numRows = columnData["numRows"]
@@ -71,8 +71,11 @@ export const Profile = ({ columnData, cand1, cand2 }) => {
               {[...Array(columns.length).keys()].map((colIdx) => {
                 var cands = columns[colIdx][rowIdx + 1]
                   .split(",")
-                  .map((c) => c.trim());
-                return (
+                  .map((c) => cmap[c.trim()]);
+
+                  console.log("CANDS")
+                  console.log(cands)
+                  return (
                   <StyledTableCell
                     key={`C${colIdx}`}
                     sx={{
@@ -86,7 +89,7 @@ export const Profile = ({ columnData, cand1, cand2 }) => {
                     }}
                     align="center"
                   >
-                    {columns[colIdx][rowIdx + 1]}
+                    {cands.join(",")}
                   </StyledTableCell>
                 );
               })}

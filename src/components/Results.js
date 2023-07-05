@@ -44,17 +44,17 @@ import {
 } from "./resultsHelpers";
 
 
-const WinnerString = ({ winners }) => {
+const WinnerString = ({ winners, cmap}) => {
   //console.log(winners)
   if (winners.length === 1) {
-    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winner is  <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[0]}</Typography>.</Typography>)
+    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winner is  <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[0]]}</Typography>.</Typography>)
   }
   else if (winners.length === 2) {
-    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[0]}</Typography> and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{winners[1]}.</Typography></Typography>)
+    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[0]]}</Typography> and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[1]]}.</Typography></Typography>)
   }
   else if (winners.length > 2) {
-    var lastWinner = winners[winners.length - 1];
-    var otherWinners = winners.slice(0, -1);
+    var lastWinner = cmap[winners[winners.length - 1]];
+    var otherWinners = winners.slice(0, -1).map((w) => cmap[w]);
     //console.log(otherWinners)
     return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are {otherWinners.map((w) => <span><Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{w}</Typography>, </span>)} and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{lastWinner}</Typography>.</Typography>)
   }
@@ -74,6 +74,7 @@ const UniqueUndefeatedExplanation = (
     defeats,
     bgColor,
     currColor,
+    cmap
   }) => {
     const [showExplanation, setShowExplanation] = useState(false);
     const undefeatedStr = (undefeatedCands) => {
@@ -103,7 +104,7 @@ const UniqueUndefeatedExplanation = (
           fontSize: 20,
         }}
       >
-        {listToStr(undefeatedCands)}{" "}
+        {listToStr(undefeatedCands.map((x)=>cmap[x]))}{" "}
         {isCondorcetWinner ? (
           <>
             {" "}
@@ -179,6 +180,7 @@ const UniqueUndefeatedExplanation = (
                                 cycle={cycle}
                                 splittingNum={cycles[cycle]}
                                 bgColor={bgColor}
+                                cmap={cmap}
                               />
                             </Grid>
                           );
@@ -196,7 +198,7 @@ const UniqueUndefeatedExplanation = (
                       fontSize: 20,
                     }}
                   >
-                    {undefeatedStr(undefeatedCands)} after discarding the red
+                    {undefeatedStr(undefeatedCands.map((x)=>cmap[x]))} after discarding the red
                     arrows:
                     <MarginSubGraphDefeats
                       margins={margins}
@@ -204,6 +206,7 @@ const UniqueUndefeatedExplanation = (
                       undefeatedCands={undefeatedCands}
                       defeats={defeats}
                       bgColor={bgColor}
+                      cmap={cmap}
                     />
                   </Box>
                 </Stack>
@@ -217,7 +220,7 @@ const UniqueUndefeatedExplanation = (
                   }}
                 >
                   There are majority cycles.{" "}
-                  {undefeatedCandsStr2(undefeatedCands)} 
+                  {undefeatedCandsStr2(undefeatedCands.map((x)=>cmap[x]))} 
                 </Box> : 
                 <Box
                   sx={{
@@ -227,7 +230,7 @@ const UniqueUndefeatedExplanation = (
                   }}
                 >
                   There are no majority cycles.{" "}
-                  {undefeatedCandsStr(undefeatedCands)} with no head-to-head
+                  {undefeatedCandsStr(undefeatedCands.map((x)=>cmap[x]))} with no head-to-head
                   losses.
                 </Box>
               )}
@@ -249,6 +252,7 @@ const UndefeatedExplanation = (
     paddingLeft,
     defeats,
     bgColor,
+    cmap
   }) => {
     const [showExplanation, setShowExplanation] = useState(false);
     const undefeatedStr = (undefeatedCands) => {
@@ -271,7 +275,7 @@ const UndefeatedExplanation = (
     };
     return (
       <Box sx={{ paddingLeft: paddingLeft, marginTop: 2, marginBottom: 2 }}>
-        The undefeated candidates are {listToStr(undefeatedCands)}.
+        The undefeated candidates are {listToStr(undefeatedCands.map((w)=>cmap[w]))}.
         <div>
           {showExplanation ? (
             <HideExplanationButton
@@ -321,6 +325,7 @@ const UndefeatedExplanation = (
                             cycle={cycle}
                             splittingNum={cycles[cycle]}
                             bgColor={bgColor}
+                            cmap={cmap}
                           />
                         </Grid>
                       );
@@ -338,7 +343,7 @@ const UndefeatedExplanation = (
                   fontSize: 20,
                 }}
               >
-                {undefeatedStr(undefeatedCands)} after discarding the red
+                {undefeatedStr(undefeatedCands.map((x)=>cmap[x]))} after discarding the red
                 arrows:
                 <MarginSubGraphDefeats
                   margins={margins}
@@ -346,6 +351,7 @@ const UndefeatedExplanation = (
                   undefeatedCands={undefeatedCands}
                   defeats={defeats}
                   bgColor={bgColor}
+                  cmap={cmap}
                 />
               </Box>
             </Stack>
@@ -357,7 +363,7 @@ const UndefeatedExplanation = (
                 paddingTop: "10px",
               }}
             >
-              {undefeatedCandsStr2(undefeatedCands)}
+              {undefeatedCandsStr2(undefeatedCands.map((x)=>cmap[x]))}{" "}
             </Box>: 
             <Box
               sx={{
@@ -367,7 +373,7 @@ const UndefeatedExplanation = (
               }}
             >
               There are no majority cycles.{" "}
-              {undefeatedCandsStr(undefeatedCands)} with no head-to-head losses.
+              {undefeatedCandsStr(undefeatedCands.map((x)=>cmap[x]))} with no head-to-head losses.
             </Box>
           )}
         </Collapse>
@@ -376,7 +382,7 @@ const UndefeatedExplanation = (
   }
 );
 
-function MarginGraph({ margins, svWinners, defeats, currCands }) {
+function MarginGraph({ margins, svWinners, defeats, currCands, cmap }) {
   var allEdges = [];
   let numCands = currCands.length;
   for (var c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
@@ -392,10 +398,10 @@ function MarginGraph({ margins, svWinners, defeats, currCands }) {
             label: margins[c1][c2].toString(),
             font: { color: "black" },
             title: defeats[c1][c2]
-              ? `The margin of ${c1} vs. ${c2} is ${margins[c1][
+              ? `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
                   c2
-                ].toString()}. ${c1} defeats ${c2}.`
-              : `The margin of ${c1} vs. ${c2} is ${margins[c1][
+                ].toString()}. ${cmap[c1]} defeats ${cmap[c2]}.`
+              : `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
                   c2
                 ].toString()}.`,
             width: 2,
@@ -408,11 +414,11 @@ function MarginGraph({ margins, svWinners, defeats, currCands }) {
   }
   const graph = {
     nodes: currCands.map((c, idx) => {
-      return c.length > 5
+      return cmap[c].length > 5
         ? {
             id: idx + 1,
-            label: c.slice(0, 5) + "...",
-            title: `${c}`,
+            label: cmap[c].slice(0, 5) + "...",
+            title: `${cmap[c]}`,
             borderWidth: 2,
             color: {
               background: svWinners.includes(c)
@@ -425,7 +431,7 @@ function MarginGraph({ margins, svWinners, defeats, currCands }) {
           }
         : {
             id: idx + 1,
-            label: c,
+            label: cmap[c],
             borderWidth: 1,
             color: {
               background: svWinners.includes(c)
@@ -609,6 +615,7 @@ const Explanation = memo(
     cycles,
     hasCycle,
     defeats,
+    cmap
   }) => {
     const [shownMainExplanation, setShownMainExplanation] = useState([]);
     const [showExplanation, setShowExplanation] = useState(false);
@@ -648,6 +655,7 @@ const Explanation = memo(
           hasCycle={hasCycle}
           defeats={defeats}
           currColor={currColor}
+          cmap={cmap}
         />
       );
     } else {
@@ -668,11 +676,12 @@ const Explanation = memo(
             cycles={cycles}
             hasCycle={hasCycle}
             defeats={defeats}
+            cmap={cmap}
           />
           <Box
             sx={{ paddingLeft: paddingLeft, marginTop: 2, marginBottom: 2 }}
           >
-            The tiebreak {winnerStr3(svWinners)}.
+            The tiebreak {winnerStr3(svWinners.map((x)=>cmap[x]))}.
           </Box>
           <Box sx={{ paddingLeft: paddingLeft }}>
             <div>
@@ -742,7 +751,7 @@ const Explanation = memo(
                           minWidth:700
                         }}
                       >
-                        The margin of {a} vs. {b} is {margin}.{" "}
+                        The margin of {cmap[a]} vs. {cmap[b]} is {margin}.{" "}
                         <>
                           <Box
                             sx={{
@@ -752,7 +761,7 @@ const Explanation = memo(
                               paddingBottom: "4px",
                             }}
                           >
-                            Removing {b}
+                            Removing {cmap[b]}
                           </Box>
                           <Grid container spacing={2}>
                             <Grid item xs={12} sm={6}>
@@ -771,7 +780,7 @@ const Explanation = memo(
                                 {winners.split(",").length === 1
                                   ? "winner is"
                                   : "winners are"}{" "}
-                                {listStrToStr(winners)}
+                                {listStrToStr(winners, cmap)}
                               </Paper>
                             </Grid>
                             <Grid item xs={12} sm={6}>
@@ -788,6 +797,7 @@ const Explanation = memo(
                                     winners={winners.split(",")}
                                     currCands={candsMinusb.split(",")}
                                     bgColor={currColor}
+                                    cmap={cmap}
                                   />
                                 }
                               </Box>
@@ -848,7 +858,7 @@ const Explanation = memo(
                             <QuestionAnswerOutlinedIcon
                               sx={{ marginRight: "3px" }}
                             />
-                            Explain why {winnerStr2(winners.split(","))}
+                            Explain why {winnerStr2(winners.split(",").map((x)=> cmap[x]))}
                           </Button>
                         )}
                         <Collapse in={shownMainExplanation.includes(eIdx)}>
@@ -864,6 +874,7 @@ const Explanation = memo(
                               margins={margins}
                               cycles={cycles}
                               defeats={defeats}
+                              cmap={cmap}
                           />}
                           </Stack>
                         </Collapse>
@@ -907,6 +918,7 @@ export const Results = ({ pollId, demoRankings }) => {
     linearOrder: [],
     defeats: {},
     cycles: {},
+    cmap: {},
     hasCycle: false,
     allowShowProfile: false,
   });
@@ -939,6 +951,7 @@ export const Results = ({ pollId, demoRankings }) => {
         setPollOutcome({
           title: resp.data["title"],
           candidates: Object.keys(resp.data["margins"]),
+          cmap: resp.data["cmap"],
           no_candidates_ranked: resp.data["no_candidates_ranked"],
           one_ranked_candidate: resp.data["one_ranked_candidate"],
           canView: resp.data["can_view"],
@@ -1051,7 +1064,7 @@ export const Results = ({ pollId, demoRankings }) => {
                     >
                       <Stack spacing={2} sx={{ fontSize: 20 }}>
                         {!pollOutcome.no_candidates_ranked ? 
-                        <WinnerString winners = {pollOutcome.svWinners} />:
+                        <WinnerString winners = {pollOutcome.svWinners} cmap={pollOutcome.cmap}/>:
                         "No candidates were ranked by the voters."
                         }
                         <Box>
@@ -1095,12 +1108,14 @@ export const Results = ({ pollId, demoRankings }) => {
                             svWinners={pollOutcome.svWinners}
                             defeats={pollOutcome.defeats}
                             currCands={pollOutcome.candidates}
+                            cmap={pollOutcome.cmap}
                           />
                         </>
                       ) : (
                         <LinearOrder
                           margins={pollOutcome.margins}
                           candidateOrder={pollOutcome.linearOrder}
+                          cmap={pollOutcome.cmap}
                         />
                       )}
                     </Box>
@@ -1114,7 +1129,7 @@ export const Results = ({ pollId, demoRankings }) => {
                           fontStyle: "inherit",
                           marginTop: 0,
                         }}>
-                          {pollOutcome.no_candidates_ranked ? "": pollOutcome.one_ranked_candidate ? `${pollOutcome.candidates[0]} is the only candidate that is ranked by any voter.`: "Explanation of winner is too complicated to display."}
+                          {pollOutcome.no_candidates_ranked ? "": pollOutcome.one_ranked_candidate ? `${pollOutcome.cmap[pollOutcome.candidates[0]]} is the only candidate that is ranked by any voter.`: "Explanation of winner is too complicated to display."}
                           
                       </Box>
                   </Grid> : 
@@ -1135,9 +1150,8 @@ export const Results = ({ pollId, demoRankings }) => {
                       >
                         {showExplanation
                           ? "Hide explanation"
-                          : `Explain why ${winnerStr2(
-                              pollOutcome.svWinners
-                            )}`}{" "}
+                          : `Explain why ${winnerStr2(pollOutcome.svWinners.map((x) => pollOutcome.cmap[x]
+                            ))}`}{" "}
                         {showExplanation ? (
                           <KeyboardArrowDownIcon />
                         ) : (
@@ -1157,6 +1171,7 @@ export const Results = ({ pollId, demoRankings }) => {
                             cycles={pollOutcome.cycles}
                             hasCycle={pollOutcome.hasCycle}
                             defeats={pollOutcome.defeats}
+                            cmap={pollOutcome.cmap}
                           />
                         </Collapse>
                       </Stack>
@@ -1192,6 +1207,7 @@ export const Results = ({ pollId, demoRankings }) => {
                             columnData={{"columns": pollOutcome.columns, "numRows": pollOutcome.numRows}}
                             cand1={cand1}
                             cand2={cand2}
+                            cmap={pollOutcome.cmap}
                           />
                           <Box
                             component="div"

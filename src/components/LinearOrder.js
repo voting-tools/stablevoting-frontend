@@ -6,7 +6,7 @@ import { grey, green, blue, red, yellow } from "@mui/material/colors";
 
 
 
-export const LinearOrder = ({ margins, candidateOrder }) => {
+export const LinearOrder = ({ margins, candidateOrder, cmap }) => {
     const [selectedCands, setSelectedCands] = useState([]);
     const handleChangeSelectedCands = (c) => {
       if (selectedCands.length < 2) {
@@ -28,16 +28,16 @@ export const LinearOrder = ({ margins, candidateOrder }) => {
             <Box sx={{ fontSize: 18, marginTop: 1, textAlign: "center" }}>
               {selectedCands.length === 2
                 ? margins[selectedCands[0]][selectedCands[1]] > 0
-                  ? `The margin of victory of ${selectedCands[0]} vs. ${
-                      selectedCands[1]
-                    } is ${margins[selectedCands[0]][selectedCands[1]]}. ${
-                      selectedCands[0]
+                  ? `The margin of victory of ${cmap[selectedCands[0]]} vs. ${
+                      cmap[selectedCands[1]]
+                    } is ${margins[selectedCands[0]][selectedCands[1]]}. ${cmap[
+                      selectedCands[0]]
                     } defeats ${selectedCands[1]}.`
-                  : `The margin of victory of ${selectedCands[1]} vs. ${
-                      selectedCands[0]
-                    } is ${margins[selectedCands[1]][selectedCands[0]]}.  ${
-                      selectedCands[1]
-                    } defeats ${selectedCands[0]}.`
+                  : `The margin of victory of ${cmap[selectedCands[1]]} vs. ${cmap[
+                      selectedCands[0]]
+                    } is ${margins[selectedCands[1]][selectedCands[0]]}.  ${cmap[
+                      selectedCands[1]]
+                    } defeats ${cmap[selectedCands[0]]}.`
                 : "Select two candidates to see the margin. "}
             </Box>
           </Grid>
@@ -53,7 +53,7 @@ export const LinearOrder = ({ margins, candidateOrder }) => {
                   >
                     <Chip
                       key={cIdx}
-                      label={`${cIdx + 1}. ${c}`}
+                      label={`${cIdx + 1}. ${cmap[c]}`}
                       onClick={() => handleChangeSelectedCands(c)}
                       style={{
                         width: "100%",
