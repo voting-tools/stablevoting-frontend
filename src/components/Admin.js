@@ -74,6 +74,7 @@ export const Admin = () => {
   const [candList, setCandList] = useState([]);
   const [columns, setColumns] = useState([[]]);
   const [numRows, setNumRows] = useState(0);
+  const [cmap, setCmap] = useState({});
   const [submittedRankingInfo, setSubmittedRankingInfo] = useState(null);
 
   const id = params.id;
@@ -465,6 +466,7 @@ export const Admin = () => {
         setColumns(resp.data.columns);
         setNumRows(resp.data.num_rows);
         setSubmittedRankingInfo(resp.data);
+        setCmap(resp.data.cmap);
       })
       .catch((err) => {
         console.log("ERROR");
@@ -642,10 +644,12 @@ export const Admin = () => {
                                 </Typography>
 
                                 <Box sx={{ marginTop: 2, overflow: "scroll" }}>
+                                  {console.log(cmap)}
                                   <Profile
                                   columnData = {{"columns": columns, "numRows": numRows}}
                                     cand1={""}
                                     cand2={""}
+                                    cmap={cmap}
                                   />
                                 </Box>
                                 <Box sx={{ marginTop: 2, fontSize:20}}>

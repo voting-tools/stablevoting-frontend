@@ -67,11 +67,16 @@ export const Profile = ({ columnData, cand1, cand2, cmap }) => {
               <TableCell key={`R${rowIdx}`} sx={{ width: "15%" }}>
                 {rankLabels[rowIdx + 1]}
               </TableCell>
+              {console.log("columns")}
+
+              {console.log(columns)}
 
               {[...Array(columns.length).keys()].map((colIdx) => {
+
+                console.log(columns[colIdx][(rowIdx + 1)])
                 var cands = columns[colIdx][rowIdx + 1]
                   .split(",")
-                  .map((c) => cmap[c.trim()]);
+                  .map((c) => c.trim());
 
                   console.log("CANDS")
                   console.log(cands)
@@ -89,7 +94,7 @@ export const Profile = ({ columnData, cand1, cand2, cmap }) => {
                     }}
                     align="center"
                   >
-                    {cands.join(",")}
+                     {cands.map((c) => cmap[c]).join("  ")} 
                   </StyledTableCell>
                 );
               })}

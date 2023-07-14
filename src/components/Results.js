@@ -44,19 +44,30 @@ import {
 } from "./resultsHelpers";
 
 
-const WinnerString = ({ winners, cmap}) => {
-  //console.log(winners)
+const WinnerString = ({ winners, cmap, selectedSVWinner}) => {
+  console.log(winners)
+  console.log(selectedSVWinner)
   if (winners.length === 1) {
     return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winner is  <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[0]]}</Typography>.</Typography>)
   }
   else if (winners.length === 2) {
-    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[0]]}</Typography> and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[1]]}.</Typography></Typography>)
+    return (
+    <>
+    <Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[0]]}</Typography> and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[winners[1]]}.</Typography></Typography>
+    
+    {selectedSVWinner != null && <Typography component='span' sx={{ fontSize: 20 }}>The randomly chosen winner is <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{cmap[selectedSVWinner]}</Typography>.</Typography>}
+    </>
+    )
   }
   else if (winners.length > 2) {
     var lastWinner = cmap[winners[winners.length - 1]];
     var otherWinners = winners.slice(0, -1).map((w) => cmap[w]);
     //console.log(otherWinners)
-    return (<Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are {otherWinners.map((w) => <span><Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{w}</Typography>, </span>)} and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{lastWinner}</Typography>.</Typography>)
+    return (<><Typography component='span' sx={{ fontSize: 20 }}>The Stable Voting winners are {otherWinners.map((w) => <span><Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{w}</Typography>, </span>)} and <Typography component='span' sx={{ fontSize: 20, fontWeight: 600 }}>{lastWinner}</Typography>.</Typography>
+    
+    {selectedSVWinner != null &&  <Typography component='span' sx={{ fontSize: 20 }}>The randomly chosen winner is {cmap[selectedSVWinner]}.</Typography>}
+    </>
+    )
   }
 
 }
@@ -909,6 +920,7 @@ export const Results = ({ pollId, demoRankings }) => {
     timezone: null,
     svWinners: [],
     scWinners: [],
+    selectedSVWinner: null,
     condorcetWinner: null,
     margins: {},
     numVoters: 0,
@@ -950,7 +962,7 @@ export const Results = ({ pollId, demoRankings }) => {
       .then((resp) => {
         setPollOutcome({
           title: resp.data["title"],
-          candidates: Object.keys(resp.data["margins"]),
+          candidates: Object.keys(resp.data["margins"]).sort(),
           cmap: resp.data["cmap"],
           no_candidates_ranked: resp.data["no_candidates_ranked"],
           one_ranked_candidate: resp.data["one_ranked_candidate"],
@@ -959,6 +971,7 @@ export const Results = ({ pollId, demoRankings }) => {
           timezone: resp.data["timezone"],
           svWinners: resp.data["sv_winners"],
           scWinners: resp.data["sc_winners"],
+          selectedSVWinner: resp.data["selected_sv_winner"],
           condorcetWinner:
             resp.data["condorcet_winner"] !== "N/A"
               ? resp.data["condorcet_winner"]
@@ -988,6 +1001,9 @@ export const Results = ({ pollId, demoRankings }) => {
       });
   }, [demoRankings]);
 
+  console.log(pollOutcome)
+  console.log(pollOutcome.cmap[2])
+  console.log(pollOutcome.cmap["2"])
   return (
     <>
       <Container maxWidth="lg" sx={{ marginBottom: 10 }}>
@@ -1064,7 +1080,7 @@ export const Results = ({ pollId, demoRankings }) => {
                     >
                       <Stack spacing={2} sx={{ fontSize: 20 }}>
                         {!pollOutcome.no_candidates_ranked ? 
-                        <WinnerString winners = {pollOutcome.svWinners} cmap={pollOutcome.cmap}/>:
+                        <WinnerString winners = {pollOutcome.svWinners} cmap={pollOutcome.cmap} selectedSVWinner = {pollOutcome.selectedSVWinner}/>:
                         "No candidates were ranked by the voters."
                         }
                         <Box>
@@ -1109,17 +1125,19 @@ export const Results = ({ pollId, demoRankings }) => {
                             defeats={pollOutcome.defeats}
                             currCands={pollOutcome.candidates}
                             cmap={pollOutcome.cmap}
-                          />
+                      /> 
                         </>
                       ) : (
+                        <span>
                         <LinearOrder
                           margins={pollOutcome.margins}
                           candidateOrder={pollOutcome.linearOrder}
                           cmap={pollOutcome.cmap}
-                        />
+                      /> 
+                      </span>
                       )}
                     </Box>
-                  </Grid>
+                  </Grid> 
                   {Object.keys(pollOutcome.explanations).length === 0 || Object.keys(pollOutcome.explanations[pollOutcome.candidates.join(",")]).length === 0 ? 
                     <Grid item xs={12}>
                       <Box sx={{
@@ -1208,7 +1226,7 @@ export const Results = ({ pollId, demoRankings }) => {
                             cand1={cand1}
                             cand2={cand2}
                             cmap={pollOutcome.cmap}
-                          />
+                        />
                           <Box
                             component="div"
                             sx={{ marginTop: 4, fontSize: 20 }}
@@ -1228,7 +1246,7 @@ export const Results = ({ pollId, demoRankings }) => {
                                 </MenuItem>
                                 {pollOutcome.candidates.map((c, cIdx) => (
                                   <MenuItem key={cIdx} value={c}>
-                                    {c}
+                                    {pollOutcome.cmap[c]}
                                   </MenuItem>
                                 ))}
                               </Select>
@@ -1248,7 +1266,7 @@ export const Results = ({ pollId, demoRankings }) => {
                                 </MenuItem>
                                 {pollOutcome.candidates.map((c, cIdx) => (
                                   <MenuItem key={cIdx} value={c}>
-                                    {c}
+                                    {pollOutcome.cmap[c]}
                                   </MenuItem>
                                 ))}
                               </Select>
@@ -1266,7 +1284,7 @@ export const Results = ({ pollId, demoRankings }) => {
                     <div />
                   )}
                 </Grid>
-              )}
+                )}
             </>
           )}
         </Paper>
