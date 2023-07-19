@@ -46,6 +46,7 @@ export function Demo() {
     { num: 1, ranking: { A: 1, B: 2 } },
   ]);
   const [candidates, setCandidates] = useState(["A", "B", "C"])
+  const [cmap, setCmap] = useState({"A": "A", "B": "B", "C": "C"})
   const [columns, setColumns] = useState({ "columns": [[1, "A", "B", "C"], [1, "A,C", "B", ""], [1, "B", "A,C", ""], [1, "A", "B", ""]], "numRows": 3 })
   const [showInputRankings, setShowInputRankings] = useState(true)
   const [showResults, setShowResults] = useState(false)
@@ -78,6 +79,7 @@ export function Demo() {
 
     setCandidates(newCandidates)
     setRankings(newRankings)
+    setCmap(Object.fromEntries(newCandidates.map((c) => [c, c])))
     //generateColumns()
   }
 
@@ -293,7 +295,7 @@ export function Demo() {
           </Box>
         </Collapse>
         <Box sx={{ marginTop: 5, marginBottom: 10 }}>
-          {columns != undefined && <Profile columnData={columns} />}
+          {columns != undefined && <Profile cmap={cmap} columnData={columns} />}
         </Box>
         <Box sx={{ textAlign: "center", marginBottom: 5 }}>
           <Button
