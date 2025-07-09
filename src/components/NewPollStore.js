@@ -1,7 +1,7 @@
 
-import { createState, useState } from '@hookstate/core';
+import { hookstate, useHookstate } from '@hookstate/core';
 
-export const newPollState = createState({
+export const newPollState = hookstate({
     id: null,
     owner_id: null,
     submitted: false,
@@ -14,8 +14,10 @@ export const newPollState = createState({
     show_rankings: true,
     can_view_outcome_before_closing: false,
     show_outcome: true,
-  });
+});
+
 console.log(newPollState.get())
+
 export const resetPoll = () => {
     newPollState.set({
         id: null,
@@ -30,10 +32,9 @@ export const resetPoll = () => {
         show_rankings: true,
         can_view_outcome_before_closing: false,
         show_outcome: true,
-        });
+    });
 };
   
 export const useNewPollState = () => {
-    return useState(newPollState);
+    return useHookstate(newPollState);
 };
-  

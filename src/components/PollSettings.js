@@ -314,7 +314,7 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
                   poll. Give the list of emails for the voters that will
                   participate in the poll. Each voter will receive a unique link
                   to access the poll. Enter the emails separated by a comma, a
-                  space or a newline. <em>No emails will be saved.</em>{" "}
+                  space or a newline. {/*<em>No emails will be saved.</em>*/}{" "}
                 </Box>
                 <Box
                   sx={{

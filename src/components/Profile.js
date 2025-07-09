@@ -12,89 +12,162 @@ import { COLORS_RGB } from "./helpers";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
-    backgroundColor: theme.palette.common.black,
-    color: theme.palette.common.white,
-    borderLeft: 0,
+    backgroundColor: '#f5f5f5',
+    color: theme.palette.text.primary,
+    fontWeight: 600,
+    fontSize: 14,
+    borderBottom: '2px solid #e0e0e0',
+    borderRight: '1px solid #e0e0e0',
+    padding: '12px 16px',
+    whiteSpace: 'nowrap',
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
   },
   [`&.${tableCellClasses.body}`]: {
-    fontSize: 16,
+    fontSize: 15,
+    padding: '10px 16px',
+    borderRight: '1px solid #f0f0f0',
   },
 }));
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
-  borderLeft: 0,
-  "&:nth-of-type(odd)": {
-    backgroundColor: "inherit" /*theme.palette.action.hover,*/,
+  '&:nth-of-type(even)': {
+    backgroundColor: '#fafafa',
   },
-  "&:hover": {
-    backgroundColor: theme.palette.action.hover,
+  '&:hover': {
+    backgroundColor: '#f0f0f0',
+    '& td': {
+      color: theme.palette.text.primary,
+    }
   },
-  // hide last border
-  "&:last-child td, &:last-child th": {
-    border: 0,
+  '& td:last-child, & th:last-child': {
+    borderRight: 0,
   },
 }));
 
-export const Profile = ({ columnData, cand1, cand2, cmap }) => {
+const RankHeaderCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: '#f5f5f5',
+  fontWeight: 600,
+  fontSize: 14,
+  color: theme.palette.text.primary,
+  borderRight: '2px solid #e0e0e0',
+  borderBottom: '2px solid #e0e0e0',
+  position: 'sticky',
+  left: 0,
+  top: 0,
+  zIndex: 4, // Highest z-index - above both column and row headers
+  padding: '12px 16px',
+  minWidth: '120px',
+}));
 
-  let columns = columnData["columns"]
-  let numRows = columnData["numRows"]
-  console.log("IN PROFILE")
-  console.log(columns)
+const RankCell = styled(TableCell)(({ theme }) => ({
+  backgroundColor: '#fafafa',
+  fontWeight: 500,
+  fontSize: 14,
+  color: theme.palette.text.secondary,
+  borderRight: '2px solid #e0e0e0',
+  position: 'sticky',
+  left: 0,
+  zIndex: 1,
+  padding: '10px 16px',
+  minWidth: '120px',
+}));
+
+export const Profile = ({ columnData, cand1, cand2, cmap }) => {
+  let columns = columnData["columns"];
+  let numRows = columnData["numRows"];
+  
+  // Sort columns by vote count
+  const sortedColumns = [...columns].sort((a, b) => {
+    const headerA = String(a[0]);
+    const headerB = String(b[0]);
+    
+    // Extract ANY number from the headers
+    const extractNumber = (str) => {
+      const nums = str.match(/\d+/g);
+      if (nums && nums.length > 0) {
+        // Return the first number found
+        return parseInt(nums[0], 10);
+      }
+      return 0;
+    };
+    
+    const countA = extractNumber(headerA);
+    const countB = extractNumber(headerB);
+    
+    // Debug logging
+    console.log(`Sorting: "${headerA}" (${countA}) vs "${headerB}" (${countB})`);
+    
+    // Sort descending - highest vote count first
+    return countB - countA;
+  });
+  
+  console.log("Original order:", columns.map(c => c[0]));
+  console.log("Sorted order:", sortedColumns.map(c => c[0]));
+
   return (
-    <TableContainer component={Paper}>
-      <Table sx={{ fontSize: 20 }} size="small" aria-label="simple table">
+    <TableContainer 
+      component={Paper} 
+      sx={{ 
+        boxShadow: 'none',
+        border: '1px solid #e0e0e0',
+        borderRadius: 1, // Subtle rounded corners
+        overflow: 'auto',
+        maxHeight: '600px',
+        position: 'relative',
+      }}
+    >
+      <Table 
+        sx={{ 
+          minWidth: 650,
+          borderCollapse: 'collapse',
+        }} 
+        size="small" 
+        aria-label="ranking profile table"
+        stickyHeader
+      >
         <TableHead>
-          <StyledTableRow>
-            <TableCell key={"empty"} sx={{ backgroundColor: "white" }}>
-              {" "}
-            </TableCell>
-            {[...Array(columns.length).keys()].map((colIdx) => {
-              return (
-                <StyledTableCell key={`H${colIdx}`} align="center">
-                  {columns[colIdx][0]}
-                </StyledTableCell>
-              );
-            })}
-          </StyledTableRow>
+          <TableRow>
+            <RankHeaderCell>
+              Ranking
+            </RankHeaderCell>
+            {sortedColumns.map((column, colIdx) => (
+              <StyledTableCell key={`H${colIdx}`} align="center">
+                {column[0]}
+              </StyledTableCell>
+            ))}
+          </TableRow>
         </TableHead>
         <TableBody>
           {[...Array(numRows).keys()].map((rowIdx) => (
-            <StyledTableRow
-              key={rowIdx}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell key={`R${rowIdx}`} sx={{ width: "15%" }}>
+            <StyledTableRow key={rowIdx}>
+              <RankCell>
                 {rankLabels[rowIdx + 1]}
-              </TableCell>
-              {console.log("columns")}
-
-              {console.log(columns)}
-
-              {[...Array(columns.length).keys()].map((colIdx) => {
-
-                console.log(columns[colIdx][(rowIdx + 1)])
-                var cands = columns[colIdx][rowIdx + 1]
+              </RankCell>
+              {sortedColumns.map((column, colIdx) => {
+                var cands = column[rowIdx + 1]
                   .split(",")
                   .map((c) => c.trim());
 
-                  console.log("CANDS")
-                  console.log(cands)
-                  return (
+                const isHighlighted1 = cand1 !== "" && cands.includes(cand1);
+                const isHighlighted2 = cand2 !== "" && cands.includes(cand2);
+                
+                return (
                   <StyledTableCell
                     key={`C${colIdx}`}
-                    sx={{
-                      borderLeft: 0,
-                      backgroundColor:
-                        cand1 !== "" && cands.includes(cand1)
-                          ? `rgba(${COLORS_RGB.primary}, 0.5)`
-                          : cand2 !== "" && cands.includes(cand2)
-                          ? `rgba(${COLORS_RGB.third}, 0.5)`
-                          : "inherit",
-                    }}
                     align="center"
+                    sx={{
+                      backgroundColor: isHighlighted1
+                        ? `rgba(${COLORS_RGB.primary}, 0.2)`
+                        : isHighlighted2
+                        ? `rgba(${COLORS_RGB.third}, 0.2)`
+                        : "inherit",
+                      fontWeight: isHighlighted1 || isHighlighted2 ? 500 : 400,
+                      transition: 'background-color 0.2s ease',
+                    }}
                   >
-                     {cands.map((c) => cmap[c]).join("  ")} 
+                    {cands.map((c) => cmap[c]).join(", ")}
                   </StyledTableCell>
                 );
               })}

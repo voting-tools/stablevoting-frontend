@@ -14,7 +14,6 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Button from "@mui/material/Button";
 import Collapse from "@mui/material/Collapse";
 import axios from "axios";
-import ShareIcon from "@mui/icons-material/Share";
 import CircularProgress from "@mui/material/CircularProgress";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
@@ -25,11 +24,11 @@ import { grey } from "@mui/material/colors";
 import { API_URL } from "./helpers";
 import { v4 } from "uuid";
 import "./network.css";
-import Graph from "react-graph-vis";
+//import Graph from "react-graph-vis";
 import CytoscapeComponent from "react-cytoscapejs";
 
 import Profile from "./Profile";
-import { Cycle, MarginSubGraphDefeats, MarginSubGraph } from "./MarginGraphs";
+import { Cycle, MarginSubGraphDefeats, MarginSubGraph } from "./MarginGraphV2";
 import LinearOrder from "./LinearOrder";
 import { COLORS, COLORS_RGB } from "./helpers";
 import {
@@ -396,242 +395,225 @@ const UndefeatedExplanation = (
   }
 );
 
+
+
+
 function MarginGraph({ margins, svWinners, defeats, currCands, cmap }) {
-  var allEdges = [];
-  let numCands = currCands.length;
-  for (var c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
-    for (var c2_idx = 0; c2_idx < currCands.length; c2_idx++) {
-      var c1 = currCands[c1_idx];
-      var c2 = currCands[c2_idx];
-      if (c1 !== c2) {
-        if (margins[c1][c2] > 0) {
-          allEdges.push({
-            id: `${c1_idx + 1}-${c2_idx + 1}`,
-            from: c1_idx + 1,
-            to: c2_idx + 1,
-            label: margins[c1][c2].toString(),
-            font: { color: "black" },
-            title: defeats[c1][c2]
-              ? `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
-                  c2
-                ].toString()}. ${cmap[c1]} defeats ${cmap[c2]}.`
-              : `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margins[c1][
-                  c2
-                ].toString()}.`,
-            width: 2,
-            color: defeats[c1][c2] ? "#1080c3" : "black",
-            arrows: { to: true },
-          });
+  const elements = useMemo(() => {
+    const nodes = [];
+    const edges = [];
+    
+    // Create nodes
+    currCands.forEach((c, idx) => {
+      const label = cmap[c];
+      const displayLabel = label.length > 5 ? `${label.slice(0, 5)}...` : label;
+      
+      nodes.push({
+        data: {
+          id: (idx + 1).toString(),
+          candidateId: c,
+          label: displayLabel,
+          fullLabel: label,
+          title: label,
+          isSvWinner: svWinners.includes(c)
         }
+      });
+    });
+    
+    // Create edges
+    for (let c1_idx = 0; c1_idx < currCands.length; c1_idx++) {
+      for (let c2_idx = 0; c2_idx < currCands.length; c2_idx++) {
+        const c1 = currCands[c1_idx];
+        const c2 = currCands[c2_idx];
+        
+        if (c1 === c2) continue;
+        
+        const margin = margins[c1]?.[c2];
+        if (!margin || margin <= 0) continue;
+        
+        const isDefeat = defeats[c1]?.[c2];
+        
+        edges.push({
+          data: {
+            id: `${c1_idx + 1}-${c2_idx + 1}`,
+            source: (c1_idx + 1).toString(),
+            target: (c2_idx + 1).toString(),
+            label: margin.toString(),
+            margin: margin,
+            title: isDefeat
+              ? `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margin}. ${cmap[c1]} defeats ${cmap[c2]}.`
+              : `The margin of ${cmap[c1]} vs. ${cmap[c2]} is ${margin}.`,
+            isDefeat: isDefeat
+          }
+        });
       }
     }
-  }
-  const graph = {
-    nodes: currCands.map((c, idx) => {
-      return cmap[c].length > 5
-        ? {
-            id: idx + 1,
-            label: cmap[c].slice(0, 5) + "...",
-            title: `${cmap[c]}`,
-            borderWidth: 2,
-            color: {
-              background: svWinners.includes(c)
-                ? `rgba(${COLORS_RGB.secondary},1)`
-                : "#EEEEEE",
-              border: svWinners.includes(c)
-                ? `rgba(${COLORS_RGB.secondary},1)`
-                : "#EEEEEE",
-            },
-          }
-        : {
-            id: idx + 1,
-            label: cmap[c],
-            borderWidth: 1,
-            color: {
-              background: svWinners.includes(c)
-                ? `rgba(${COLORS_RGB.secondary},1)`
-                : "#EEEEEE",
-              border: svWinners.includes(c)
-                ? `rgba(${COLORS_RGB.secondary},1)`
-                : "#EEEEEE",
-            },
-          };
-    }),
-    edges: allEdges,
+    
+    return [...nodes, ...edges];
+  }, [margins, svWinners, defeats, currCands, cmap]);
+  
+  const numCands = currCands.length;
+  
+  const stylesheet = [
+    // Node styles
+    {
+      selector: 'node',
+      style: {
+        'background-color': '#EEEEEE',
+        'border-color': '#EEEEEE',
+        'border-width': 1,
+        'label': 'data(label)',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': numCands < 6 ? '24px' : '16px',
+        'font-family': 'Arial, sans-serif',
+        'shape': 'rectangle',
+        'width': 100,
+        'height': 100,
+        'transition-property': 'background-color, border-color, border-width, opacity',
+        'transition-duration': '0.2s'
+      }
+    },
+    // SV Winner nodes
+    {
+      selector: 'node[isSvWinner]',
+      style: {
+        'background-color': `rgba(${COLORS_RGB.secondary},1)`,
+        'border-color': `rgba(${COLORS_RGB.secondary},1)`,
+        'border-width': 2
+      }
+    },
+    // Edge styles
+    {
+      selector: 'edge',
+      style: {
+        'width': 2,
+        'line-color': 'black',
+        'target-arrow-color': 'black',
+        'target-arrow-shape': 'triangle',
+        'arrow-scale': 1,
+        'curve-style': 'bezier',
+        'control-point-step-size': 40,
+        'label': 'data(label)',
+        'font-size': numCands < 6 ? '24px' : '16px',
+        'text-background-color': 'white',
+        'text-background-opacity': 1,
+        'text-background-shape': 'rectangle',
+        'text-background-padding': '3px',
+        'text-margin-y': -10,
+        'transition-property': 'line-color, target-arrow-color, width, opacity',
+        'transition-duration': '0.2s',
+        'z-index': 1
+      }
+    },
+    // Defeat edges
+    {
+      selector: 'edge[isDefeat]',
+      style: {
+        'line-color': '#1080c3',
+        'target-arrow-color': '#1080c3'
+      }
+    },
+    // Hover styles
+    {
+      selector: 'edge.hover',
+      style: {
+        'z-index': 10,
+        'line-color': 'data(isDefeat ? "#1080c3" : "black")',
+        'target-arrow-color': 'data(isDefeat ? "#1080c3" : "black")'
+      }
+    },
+    {
+      selector: 'edge.dim',
+      style: {
+        'line-color': 'lightgrey',
+        'target-arrow-color': 'lightgrey',
+        'text-opacity': 0.5
+      }
+    },
+    {
+      selector: 'node.highlight',
+      style: {
+        'border-color': 'black',
+        'border-width': 3
+      }
+    }
+  ];
+  
+  const layout = {
+    name: 'cose',
+    animate: false,
+    randomize: false,
+    fit: true,
+    padding: 30,
+    idealEdgeLength: numCands < 6 ? 200 : 200,
+    nodeOverlap: 20,
+    gravity: 0.03,
+    numIter: 1500,
+    initialTemp: 200,
+    coolingFactor: 0.95,
+    minTemp: 1.0
   };
-  const options = {
-    layout: {
-      hierarchical: false,
-      randomSeed: 2,
-    },
-
-    nodes: {
-      font: { size: numCands < 6 ? 24 : 16 },
-      size: 100,
-      shape: "box",
-    },
-    edges: {
-      length: numCands < 6 ? 200 : 200,
-      arrows: {
-        to: { enabled: true, scaleFactor: 1, type: "arrow" },
-      },
-      font: {
-        size: numCands < 6 ? 24 : 16,
-        background: "white",
-        align: "middle",
-      },
-      smooth: true,
-    },
-    height: "500px",
-    width: "100vh",
-    autoResize: true,
-    interaction: { zoomView: false, hover: true },
-    // physics: {
-    //   enabled: true,
-    //   wind: { x: 0, y: 0 },
-    //   stabilization: {
-    //     enabled: true,
-    //   },
-    //   barnesHut: {
-    //     theta: 0.5, //0.5
-    //     gravitationalConstant: -3000, //-2000,
-    //     centralGravity: 0.03, //0.3,
-    //     springLength: 95,
-    //     springConstant: 0.01, //0.04,
-    //     damping: 0.09, //0.09
-    //     avoidOverlap: 0, //0
-    //   },
-    //   /* repulsion: {
-    //       centralGravity: 0.2,
-    //       springLength: 200,
-    //       springConstant: 0.05,
-    //       nodeDistance: 100,
-    //       damping: 0.09
-    //     },
-    //     */
-    //   /* forceAtlas2Based: {
-    //       theta: 0.5,
-    //       gravitationalConstant: 0, //-50,
-    //       centralGravity: 0.01,
-    //       springConstant: 0.08,
-    //       springLength: 100,
-    //       damping: 0.4,
-    //       avoidOverlap: 10 //0
-    //     },*/
-    // },
-
-      physics: {
-    enabled: true,
-    wind: { x: 0, y: 0 },
-    stabilization: {
-      enabled: true,
-      iterations: 1000,  // Add more iterations
-      updateInterval: 10,
-      fit: true
-    },
-    barnesHut: {
-      theta: 0.5,
-      gravitationalConstant: -3000,
-      centralGravity: 0.03,
-      springLength: 95,
-      springConstant: 0.01,
-      damping: 0.09,
-      avoidOverlap: 0
-    },
-  }
-
-  };
-
-  const events = {
-    select: function (event) {
-      //var { nodes, edges } = event;
-    },
-    // hoverNode: function (n) {
-    //graph.edges[0]["color"] = "red"
-    //}
-  };
+  
   return (
-    <div style={{minHeight:"500px"}}>
-    <Graph
-      key={v4()}
-      graph={graph}
-      options={options}
-      events={events}
-      getNetwork={useCallback((network) => {
-        network.on("hoverEdge", function (params) {
-          var newEdges = allEdges.map((e) => {
-            var newEdge = { ...e };
-            if (e.id != params.edge) {
-              newEdge["color"] = "lightgrey";
-              newEdge["font"]["color"] = "lightgrey";
-            }
-            //e["opacity"] = 0.1
-            return newEdge;
+    <div style={{ minHeight: "500px" }}>
+      <CytoscapeComponent
+        elements={elements}
+        stylesheet={stylesheet}
+        layout={layout}
+        style={{ width: "100%", height: "500px" }}
+        cy={(cy) => {
+          // Configure interaction
+          cy.userZoomingEnabled(false);
+          cy.autoungrabify(true);
+          
+          // Hover edge
+          cy.on('mouseover', 'edge', (evt) => {
+            const edge = evt.target;
+            const sourceId = edge.source().id();
+            const targetId = edge.target().id();
+            
+            // Highlight edge
+            edge.addClass('hover');
+            
+            // Dim other edges
+            cy.edges().not(edge).addClass('dim');
+            
+            // Highlight connected nodes
+            cy.getElementById(sourceId).addClass('highlight');
+            cy.getElementById(targetId).addClass('highlight');
           });
-          var newNodes = graph.nodes.map((n) => {
-            var newNode = { ...n };
-            var src = params.edge.split("-")[0];
-            var target = params.edge.split("-")[1];
-            if (n.id == src || n.id == target) {
-              newNode["color"]["border"] = "black";
-              newNode["borderWidth"] = 3;
-            }
-            //e["opacity"] = 0.1
-            return newNode;
+          
+          cy.on('mouseout', 'edge', () => {
+            cy.edges().removeClass('hover dim');
+            cy.nodes().removeClass('highlight');
           });
-
-          network.body.data.edges.update(newEdges);
-          network.body.data.nodes.update(newNodes);
-        });
-
-        network.on("blurEdge", function (params) {
-          var newEdges = allEdges.map((e) => {
-            e["font"]["color"] = "black";
-            return e;
+          
+          // Hover node
+          cy.on('mouseover', 'node', (evt) => {
+            const node = evt.target;
+            const connectedEdges = node.connectedEdges();
+            
+            // Dim unconnected edges
+            cy.edges().not(connectedEdges).addClass('dim');
+            
+            // Show full label
+            node.style('label', node.data('fullLabel'));
           });
-
-          var newNodes = graph.nodes.map((n) => {
-            var newNode = { ...n };
-            var src = params.edge.split("-")[0];
-            var target = params.edge.split("-")[1];
-            if (n.id == src || n.id == target) {
-              newNode["color"]["border"] = svWinners.includes(n.title)
-                ? `rgba(${COLORS_RGB.secondary},1)`
-                : "#EEEEEE";
-              newNode["borderWidth"] = 1;
-            }
-            //e["opacity"] = 0.1
-            return newNode;
+          
+          cy.on('mouseout', 'node', (evt) => {
+            const node = evt.target;
+            cy.edges().removeClass('dim');
+            
+            // Restore abbreviated label
+            const label = node.data('fullLabel');
+            node.style('label', label.length > 5 ? `${label.slice(0, 5)}...` : label);
           });
-          network.body.data.edges.update(newEdges);
-          network.body.data.nodes.update(newNodes);
-        });
-        network.on("hoverNode", function (params) {
-          var newEdges = allEdges.map((e) => {
-            var newEdge = { ...e };
-            if (e.to !== params.node && e.from !== params.node) {
-              newEdge["color"] = "lightgrey";
-              newEdge["font"]["color"] = "lightgrey";
-            }
-            //e["opacity"] = 0.1
-            return newEdge;
-          });
-          network.body.data.edges.update(newEdges);
-        });
-        network.on("blurNode", function (params) {
-          var newEdges = allEdges.map((e) => {
-            e["font"]["color"] = "black";
-            return e;
-          });
-          network.body.data.edges.update(newEdges);
-        });
-      }, [])}
-    />
+        }}
+      />
     </div>
   );
 }
-
-
 const MemoMarginGraph = memo(MarginGraph, areEqual);
 
 const onlyZeroMargins = (currCands, margins) => {
@@ -963,7 +945,6 @@ export const Results = ({ pollId, demoRankings }) => {
   const params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const matches = useMediaQuery("(min-width:600px)");
-  const [error, setError] = useState(null);
 
   var { id } = params;
   const vid = searchParams.get("vid");
@@ -1021,103 +1002,12 @@ export const Results = ({ pollId, demoRankings }) => {
         //window.history.replaceState({}, document.title)
       })
       .catch((err) => {
-        console.log("Error in poll outcome request:", err);
-        
-        // Safely access error details
-        let errorMessage = "An error occurred while fetching results";
-        let isNotFound = false;
-        
-        if (err.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
-          console.error("Server error response:", err.response);
-          
-          // Check if it's a 404 or poll not found error
-          if (err.response.status === 404) {
-            isNotFound = true;
-          }
-          
-          // Safely navigate the error object
-          if (err.response.data) {
-            if (err.response.data.detail) {
-              if (typeof err.response.data.detail === 'string') {
-                errorMessage = err.response.data.detail;
-                // Check for "poll not found" type messages
-                if (errorMessage.toLowerCase().includes('not found') || 
-                    errorMessage.toLowerCase().includes('does not exist')) {
-                  isNotFound = true;
-                }
-              } else if (err.response.data.detail.error) {
-                errorMessage = err.response.data.detail.error;
-                if (errorMessage.toLowerCase().includes('not found') || 
-                    errorMessage.toLowerCase().includes('does not exist')) {
-                  isNotFound = true;
-                }
-              }
-            } else if (err.response.data.error) {
-              errorMessage = err.response.data.error;
-              if (errorMessage.toLowerCase().includes('not found') || 
-                  errorMessage.toLowerCase().includes('does not exist')) {
-                isNotFound = true;
-              }
-            }
-          }
-        } else if (err.request) {
-          // The request was made but no response was received
-          console.error("No response received:", err.request);
-          errorMessage = "No response from server. Please check your connection.";
-        } else {
-          // Something happened in setting up the request that triggered an Error
-          console.error("Request setup error:", err.message);
-          errorMessage = err.message || "Failed to send request";
-        }
-        
-        // Set the appropriate state based on the error
-        if (isNotFound) {
-          setShowNotFoundMessage(true);
-        } else {
-          setError(errorMessage);
-        }
+        console.log("Error message");
+        console.error(err["response"].data["detail"]["error"]);
+        setShowNotFoundMessage(true);
         setIsLoading(false);
       });
-
-      // .catch((err) => {
-      //   console.log("Error message");
-      //   console.error(err["response"].data["detail"]["error"]);
-      //   setShowNotFoundMessage(true);
-      //   setIsLoading(false);
-      // });
   }, [demoRankings]);
-
-
-  const getShareableUrl = () => {
-  const url = new URL(window.location.href);
-  url.searchParams.delete('oid'); // Remove oid for security
-  return url.toString();
-};
-
-const shareResults = async () => {
-  const shareUrl = getShareableUrl();
-  const winners = pollOutcome.svWinners.map(w => pollOutcome.cmap[w]).join(', ');
-  
-  const shareData = {
-    title: pollOutcome.title,
-    text: `Poll Results: The winner is ${winners}. Check out the full results!`,
-    url: shareUrl
-  };
-  
-  try {
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      // Fallback - copy to clipboard
-      navigator.clipboard.writeText(shareUrl);
-      alert('Link copied to clipboard!');
-    }
-  } catch (err) {
-    console.log('Share cancelled');
-  }
-};
 
   console.log(pollOutcome)
   console.log(pollOutcome.cmap[2])
@@ -1186,43 +1076,29 @@ const shareResults = async () => {
               ) : (
                 <Grid container spacing={4}>
                   <Grid item xs={12} sm={12}>
-                  <Paper
-                    variant="elevation"
-                    elevation={0}
-                    sx={{
-                      backgroundColor: `rgba(${COLORS_RGB.lightgrey}, 1)`,
-                      padding: 4,
-                      border: `2px solid ${COLORS.grey}`,
-                      borderRadius: 2,
-                    }}
-                  >
-                    <Stack spacing={2} sx={{ fontSize: 20 }}>
-                      {!pollOutcome.no_candidates_ranked ? 
-                      <WinnerString winners = {pollOutcome.svWinners} cmap={pollOutcome.cmap} selectedSVWinner = {pollOutcome.selectedSVWinner}/>:
-                      "No candidates were ranked by the voters."
-                      }
-                      <Box>
-                        {pollOutcome.numVoters === 1
-                          ? "1 person "
-                          : pollOutcome.numVoters.toString() + " people"}{" "}
-                        participated in this poll.
-                      </Box>
-                    </Stack>
-                  </Paper>
-                                        <Box sx={{ textAlign: 'left', mt: 2 }}>
-                        <Button 
-                          variant="outlined" 
-                          onClick={shareResults}
-                          startIcon={<ShareIcon />}
-                          sx={{ 
-                            textTransform: 'none',
-                            fontSize: '16px'
-                          }}
-                        >
-                          Share Results
-                        </Button>
-                      </Box>
-
+                    <Paper
+                      variant="elevation"
+                      elevation={0}
+                      sx={{
+                        backgroundColor: `rgba(${COLORS_RGB.lightgrey}, 1)`,
+                        padding: 4,
+                        border: `2px solid ${COLORS.grey}`,
+                        borderRadius: 2,
+                      }}
+                    >
+                      <Stack spacing={2} sx={{ fontSize: 20 }}>
+                        {!pollOutcome.no_candidates_ranked ? 
+                        <WinnerString winners = {pollOutcome.svWinners} cmap={pollOutcome.cmap} selectedSVWinner = {pollOutcome.selectedSVWinner}/>:
+                        "No candidates were ranked by the voters."
+                        }
+                        <Box>
+                          {pollOutcome.numVoters === 1
+                            ? "1 person "
+                            : pollOutcome.numVoters.toString() + " people"}{" "}
+                          participated in this poll.
+                        </Box>
+                      </Stack>
+                    </Paper>
                   </Grid>
                   <Grid item xs={12} sm={12}>
                     <Box

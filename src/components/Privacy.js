@@ -83,7 +83,8 @@ export const Privacy = (props) => {
               Privacy
             </Title>
             <Paragraph>
-              We do not store email addresses of poll owners or voters. We do store IP addresses with each ballot as a minimal attempt to prevent double voting (to more effectively prevent double voting, select the "private" setting when creating a poll).
+
+              For public polls, we do not store email addresses of poll owners or voters; in private polls, we store voters' email addresses solely to verify identity. We store IP addresses with each ballot as a basic protection against duplicate voting. To more effectively prevent duplicate votes, choose the "private" setting when creating a poll.
             </Paragraph>
             <Paragraph>
 

@@ -6,7 +6,7 @@ import QuestionAnswerOutlinedIcon from "@mui/icons-material/QuestionAnswerOutlin
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import { grey } from "@mui/material/colors";
 import Popover from "@mui/material/Popover";
-var deepEqual = require('deep-equal')
+import deepEqual from 'deep-equal';
 
 export const HideExplanationButton = ({
   buttonText,
@@ -133,7 +133,7 @@ export const UndefeatedCandidateText = () => {
                 For each majority cycle, the match with the smallest margin of
                 victory is discarded. For example, if A wins against B by 1,000
                 votes, B wins against C by 2,000 votes, and C wins against A by
-                3,000 votes, then A’s win against B is discarded.
+                3,000 votes, then A's win against B is discarded.
               </li>
               <li>
                 The wins in the remaining matches are considered{" "}
@@ -254,6 +254,11 @@ export const winnerStr3 = (winners) => {
   }
 };
 
-export const areEqual = (prevProps, nextProps) => {console.log("areEqual return TRUE!!!"); console.log(prevProps); console.log("nextProps"); console.log(nextProps); console.log(deepEqual(prevProps, nextProps)); return deepEqual(prevProps, nextProps)}
-
-
+export const areEqual = (prevProps, nextProps) => {
+  console.log("areEqual return TRUE!!!"); 
+  console.log(prevProps); 
+  console.log("nextProps"); 
+  console.log(nextProps); 
+  console.log(deepEqual(prevProps, nextProps)); 
+  return deepEqual(prevProps, nextProps);
+};
