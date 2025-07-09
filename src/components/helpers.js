@@ -4,8 +4,8 @@
 export const API_URL = "https://stablevoting-backend.onrender.com";
 //export const API_URL = "https://stablevoting-api-dev.herokuapp.com"
 
-//export const URL = "https://stablevoting.org";
-export const URL = "https://dev.stablevoting.org";
+export const URL = "https://stablevoting.org";
+//export const URL = "https://dev.stablevoting.org";
 //export const URL = "http://localhost:3000"
 
 export const isValidEmail = (em) => {
