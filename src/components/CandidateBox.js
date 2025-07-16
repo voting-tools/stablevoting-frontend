@@ -66,6 +66,7 @@ export const CandidateBox = ({ candBox, candidates, tightLayout, onlyDisplay }) 
           padding:0,
           margin:0,
           minHeight: "40px",
+          flexWrap: "wrap",
         }}
       >
         <SortableContext 
