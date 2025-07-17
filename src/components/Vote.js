@@ -320,6 +320,7 @@ useEffect(() => {
           setCannotRankMessage("You are not allowed to vote in this poll.");
         }
       } else {
+        console.log("API response:", resp.data);
         var ranking = resp.data["ranking"];
         const existingVote = ranking && Object.keys(ranking).length !== 0;
         console.log("Initial ranking from API:", ranking);
@@ -333,6 +334,7 @@ useEffect(() => {
         setAlreadyVoted(existingVote)
         setTitle(resp.data["title"]);
         setDescription(resp.data["description"] || "");
+        setShowDescriptionDialog(!resp.data["hide_description"] || false);
         setIsPrivatePoll(resp.data["is_private"] || false);
         if (!embedMode && !resp.data["is_private"]) {
           fetchQRCode();

@@ -70,6 +70,11 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
     newPollState.description.get()
   );
 
+  const [hidePollDescription, setHidePollDescription] = useState(
+    newPollState.hide_description.get()
+  );
+
+
   const [dateErrorText, setDateErrorText] = useState("");
   const [showGetDate, setShowGetDate] = useState(
     newPollState.closing_datetime.get() !== null
@@ -80,6 +85,9 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
 
   const [canViewResultsBeforeClosing, setCanViewResultsBeforeClosing] =
     useState(newPollState.can_view_outcome_before_closing.get());
+  const [allowMultipleVotes, setAllowMultipleVotes] = useState(
+    newPollState.allow_multiple_votes.get()
+  );
 
   const [isPrivate, setIsPrivate] = useState(newPollState.is_private.get());
   const [emailList, setEmailList] = useState(
@@ -103,6 +111,10 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
     setShowProfile(!showProfile);
   };
 
+  const handleHidePollDescription = () => {
+    newPollState.merge({ hide_description: !hidePollDescription });
+    setHidePollDescription(!hidePollDescription);
+  };
   const handleShowOutcome = () => {
     if (showOutcome) {
       setCanViewResultsBeforeClosing(false);
@@ -111,6 +123,10 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
     setShowOutcome(!showOutcome);
   };
 
+  const handleAllowMultiple = () => {
+    newPollState.merge({ allow_multiple_votes: !allowMultipleVotes})
+    setAllowMultipleVotes(!allowMultipleVotes)
+  }
   const handleIsPrivate = () => {
     newPollState.merge({ is_private: !isPrivate });
     newPollState.merge({ voter_emails: [] });
@@ -217,6 +233,7 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
     sendPostRequest({
       title: newPollState.title.get(),
       description: newPollState.description.get(),
+      hide_description: newPollState.hide_description.get(),
       candidates: newPollState.candidates.get(),
       voter_emails: newPollState.voter_emails.get(),
       is_private: newPollState.is_private.get(),
@@ -229,6 +246,7 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       can_view_outcome_before_closing:
         newPollState.can_view_outcome_before_closing.get(),
+      allow_multiple_votes: newPollState.allow_multiple_votes.get(),
       put_unranked_candidates_at_bottom: newPollState.put_unranked_candidates_at_bottom.get(),
       num_candidates_to_rank: newPollState.num_candidates_to_rank.get(),
       allow_ties: newPollState.allow_ties.get(),
@@ -266,27 +284,37 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
               }
               settingDescription="Include description of the poll."
             />
-            <Collapse in={includeDescription}>
-              <Box
-                sx={{
-                  padding: 2,
-                  marginLeft: 5,
-                  marginTop: 1,
-                  backgroundColor: "inherit",
-                  borderRadius: 2,
-                }}
-              >
-                <TextField
-                  id="poll-description"
-                  label="Poll Description"
-                  multiline
-                  fullWidth
-                  value={pollDescription}
-                  onChange={handleAddDescription}
-                  variant="standard"
-                />
-              </Box>
-            </Collapse>
+      <Collapse in={includeDescription}>
+        <Box
+          sx={{
+            padding: 2,
+            marginLeft: 5,
+            marginTop: 1,
+            backgroundColor: "inherit",
+            borderRadius: 2,
+          }}
+        >
+          <TextField
+            id="poll-description"
+            label="Poll Description"
+            multiline
+            fullWidth
+            minRows={3}  // Makes it clearly a textarea
+            maxRows={10} // Optional: limits max height before scrolling
+            value={pollDescription}
+            onChange={handleAddDescription}
+            variant="standard"
+            helperText="Markdown formatting is supported"  // Indicates markdown support
+            placeholder="Enter your poll description here... You can use **bold**, *italic*, and other markdown formatting."
+          />
+          
+          <Setting
+            pollSetting={hidePollDescription}  // Fixed typo
+            handlePollSetting={handleHidePollDescription}  // Fixed typo
+            settingDescription="Initially hide the poll description on the vote page. Users will be able to select a button to show the description."
+          />
+        </Box>
+      </Collapse>
             <Setting
               pollSetting={isPrivate}
               handlePollSetting={handleIsPrivate}
@@ -350,6 +378,12 @@ export const PollSettings = ({ handleReset, handleBack, handleNext }) => {
               handlePollSetting={handleShowOutcome}
               settingDescription="Voters can view poll results."
             />
+            <Setting
+              pollSetting={allowMultipleVotes}
+              handlePollSetting={handleAllowMultiple}
+              settingDescription="Allow multiple votes from the same ip address."
+            />
+
             <Setting
               pollSetting={showGetDate}
               handlePollSetting={handleShowDate}

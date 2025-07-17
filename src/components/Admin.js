@@ -158,6 +158,7 @@ export const Admin = () => {
     const pollData = {
       title: updatedPollData["title"],
       description: updatedPollData["description"],
+      hide_description: updatedPollData["hide_description"],
       candidates: nonNullCands,
       is_private: updatedPollData["is_private"],
       voter_emails: updatedPollData["voter_emails"],
@@ -165,6 +166,7 @@ export const Admin = () => {
       closing_datetime: closingDate !== null ? closingDate.toISOString() : "del",
       timezone: updatedPollData["timezone"] || Intl.DateTimeFormat().resolvedOptions().timeZone,
       show_outcome: updatedPollData["show_outcome"],
+      allow_multiple_votes: updatedPollData["allow_multiple_votes"],
       can_view_outcome_before_closing: updatedPollData["can_view_outcome_before_closing"]
     };
     await updatePoll(pollData);
